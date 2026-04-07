@@ -253,11 +253,11 @@ Autel/
 
 ## 👥 Equipe
 
-| Nome | Função |
+| Nome | Matrícula |
 |------|--------|
 | Ian Melo | ... |
 | Caroline Lopes | ... |
-| Amanda Dahm | ... |
+| Amanda Dahm | 2422130022 |
 | Antônio Vieira | ... |
 
 
