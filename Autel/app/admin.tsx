@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, CardHeader, CardTitle, CardContent } from '../src/components/ui/Card';
@@ -13,7 +13,7 @@ const fmt = (iso: string) =>
   iso ? new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '';
 
 export default function Admin() {
-  const { usuarioLogado, usuarios, pets, reservas } = useApp();
+  const { usuarioLogado, usuarios, pets, reservas, removerUsuario, removerPet, removerReserva } = useApp();
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('usuarios');
 
@@ -93,6 +93,19 @@ export default function Admin() {
                     <Text style={styles.rowSub}>{u.email}</Text>
                     <Text style={styles.rowSub}>{u.telefone} · {u.cpf}</Text>
                   </View>
+                  {!u.isAdmin && (
+                    <TouchableOpacity
+                      style={styles.deleteBtn}
+                      onPress={() =>
+                        Alert.alert('Remover usuário', `Deseja remover ${u.nome}?`, [
+                          { text: 'Cancelar', style: 'cancel' },
+                          { text: 'Remover', style: 'destructive', onPress: () => removerUsuario(u.id) },
+                        ])
+                      }
+                    >
+                      <Ionicons name="close-circle" size={22} color={Colors.red} />
+                    </TouchableOpacity>
+                  )}
                 </View>
               ))}
             </CardContent>
@@ -119,6 +132,17 @@ export default function Admin() {
                     <Text style={styles.rowSub}>{p.raca} · {p.porte} · {p.sexo}</Text>
                     <Text style={styles.rowSub}>Tutor: {getUsuarioNome(p.usuarioId)}</Text>
                   </View>
+                  <TouchableOpacity
+                    style={styles.deleteBtn}
+                    onPress={() =>
+                      Alert.alert('Remover pet', `Deseja remover ${p.nome}?`, [
+                        { text: 'Cancelar', style: 'cancel' },
+                        { text: 'Remover', style: 'destructive', onPress: () => removerPet(p.id) },
+                      ])
+                    }
+                  >
+                    <Ionicons name="close-circle" size={22} color={Colors.red} />
+                  </TouchableOpacity>
                 </View>
               ))}
             </CardContent>
@@ -174,6 +198,17 @@ export default function Admin() {
                         {r.tipoAcomodacao} · R$ {r.valorTotal.toFixed(2)} · {getUsuarioNome(r.usuarioId)}
                       </Text>
                     </View>
+                    <TouchableOpacity
+                      style={styles.deleteBtn}
+                      onPress={() =>
+                        Alert.alert('Remover reserva', `Deseja remover a reserva de ${getPetNome(r.petId)}?`, [
+                          { text: 'Cancelar', style: 'cancel' },
+                          { text: 'Remover', style: 'destructive', onPress: () => removerReserva(r.id) },
+                        ])
+                      }
+                    >
+                      <Ionicons name="close-circle" size={22} color={Colors.red} />
+                    </TouchableOpacity>
                   </View>
                 ))}
               </CardContent>
@@ -236,6 +271,7 @@ const styles = StyleSheet.create({
   rowSub: { fontSize: FontSizes.xs, color: Colors.gray[500], marginTop: 1 },
 
   empty: { fontSize: FontSizes.sm, color: Colors.gray[400], textAlign: 'center', paddingVertical: Spacing[4] },
+  deleteBtn: { justifyContent: 'center', paddingLeft: Spacing[2] },
 
   reservasSection: { gap: Spacing[3] },
   summaryRow: { flexDirection: 'row', gap: 10 },

@@ -17,10 +17,13 @@ interface AppContextData {
   loading: boolean;
   adicionarUsuario: (usuario: Omit<Usuario, 'id'>) => Usuario;
   atualizarUsuario: (id: string, dados: Partial<Usuario>) => void;
+  removerUsuario: (id: string) => void;
   adicionarPet: (pet: Omit<Pet, 'id'>) => Pet;
   atualizarPet: (id: string, dados: Partial<Pet>) => void;
+  removerPet: (id: string) => void;
   adicionarReserva: (reserva: Omit<Reserva, 'id' | 'dataCadastro'>) => Reserva;
   atualizarReserva: (id: string, dados: Partial<Reserva>) => void;
+  removerReserva: (id: string) => void;
   cancelarReserva: (id: string) => { sucesso: boolean; multa: number };
   calcularValorHospedagem: (dataEntrada: string, dataSaida: string, tipoAcomodacao: string) => number;
   obterVagasDisponiveis: (dataEntrada: string, dataSaida: string) => number;
@@ -99,6 +102,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const removerUsuario = (id: string) => {
+    setUsuarios(prev => prev.filter(u => u.id !== id));
+    setPets(prev => prev.filter(p => p.usuarioId !== id));
+    setReservas(prev => prev.filter(r => r.usuarioId !== id));
+  };
+
   const adicionarPet = (pet: Omit<Pet, 'id'>): Pet => {
     const novo: Pet = { ...pet, id: `pet-${generateId()}` };
     setPets(prev => [...prev, novo]);
@@ -107,6 +116,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const atualizarPet = (id: string, dados: Partial<Pet>) => {
     setPets(prev => prev.map(p => (p.id === id ? { ...p, ...dados } : p)));
+  };
+
+  const removerPet = (id: string) => {
+    setPets(prev => prev.filter(p => p.id !== id));
+    setReservas(prev => prev.filter(r => r.petId !== id));
   };
 
   const calcularValorHospedagem = (
@@ -145,6 +159,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const atualizarReserva = (id: string, dados: Partial<Reserva>) => {
     setReservas(prev => prev.map(r => (r.id === id ? { ...r, ...dados } : r)));
+  };
+
+  const removerReserva = (id: string) => {
+    setReservas(prev => prev.filter(r => r.id !== id));
   };
 
   const cancelarReserva = (id: string): { sucesso: boolean; multa: number } => {
@@ -196,10 +214,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         loading,
         adicionarUsuario,
         atualizarUsuario,
+        removerUsuario,
         adicionarPet,
         atualizarPet,
+        removerPet,
         adicionarReserva,
         atualizarReserva,
+        removerReserva,
         cancelarReserva,
         calcularValorHospedagem,
         obterVagasDisponiveis,

@@ -35,6 +35,6 @@
       "typedRoutes": true
     },
     "scheme": "autel",
-    "newArchEnabled": true
+    "newArchEnabled": false
   }
 }

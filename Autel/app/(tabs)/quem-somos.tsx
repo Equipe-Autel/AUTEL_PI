@@ -1,8 +1,8 @@
 import React, { useRef } from 'react';
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, CardContent } from '../src/components/ui/Card';
-import { Colors, FontSizes, Spacing, BorderRadius } from '../src/constants/theme';
+import { Card, CardContent } from '../../src/components/ui/Card';
+import { Colors, FontSizes, Spacing, BorderRadius } from '../../src/constants/theme';
 
 const EQUIPE = [
   { nome: 'Amanda Dahm', cargo: 'Veterinária', especialidade: 'Medicina Veterinária', icon: 'medical' },
@@ -98,7 +98,7 @@ export default function QuemSomos() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white },
+  container: { flex: 1, backgroundColor: Colors.beige },
 
   hero: {
     backgroundColor: Colors.teal,

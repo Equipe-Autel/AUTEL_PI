@@ -11,7 +11,7 @@ import { Colors, FontSizes, Spacing, BorderRadius } from '../src/constants/theme
 
 export default function Login() {
   const [email, setEmail] = useState('');
-  const { login, resetDados } = useApp();
+  const { login } = useApp();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -29,10 +29,6 @@ export default function Login() {
     }
   };
 
-  const handleReset = () => {
-    resetDados();
-    toast.success('Dados resetados com sucesso!');
-  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -89,9 +85,7 @@ export default function Login() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>
-            <Text style={styles.resetText}>⚠️ Resetar dados do sistema</Text>
-          </TouchableOpacity>
+
         </CardContent>
       </Card>
     </ScrollView>

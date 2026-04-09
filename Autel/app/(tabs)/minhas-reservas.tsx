@@ -94,7 +94,6 @@ export default function MinhasReservas() {
     setEditModal(null);
   };
 
-  // Multa info para modal de cancelamento
   const getCancelInfo = (r: Reserva) => {
     const d = diasRestantes(r.dataEntrada);
     const temMulta = d >= 0 && d < 7;
@@ -118,7 +117,6 @@ export default function MinhasReservas() {
     <>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
-          {/* Ativas */}
           {ativas.length > 0 && (
             <View>
               <Text style={styles.sectionTitle}>Reservas Ativas</Text>
@@ -177,20 +175,10 @@ export default function MinhasReservas() {
                       </View>
 
                       <View style={styles.acoesBtns}>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onPress={() => openEdit(r)}
-                          style={{ flex: 1 }}
-                        >
+                        <Button variant="outline" size="sm" onPress={() => openEdit(r)} style={{ flex: 1 }}>
                           Editar
                         </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onPress={() => setCancelModal(r)}
-                          style={{ flex: 1 }}
-                        >
+                        <Button variant="destructive" size="sm" onPress={() => setCancelModal(r)} style={{ flex: 1 }}>
                           Cancelar
                         </Button>
                       </View>
@@ -201,7 +189,6 @@ export default function MinhasReservas() {
             </View>
           )}
 
-          {/* Histórico */}
           {historico.length > 0 && (
             <View>
               <Text style={styles.sectionTitle}>Histórico</Text>
@@ -252,9 +239,7 @@ export default function MinhasReservas() {
                   <Ionicons name="warning" size={20} color={Colors.yellow} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.multaTitle}>Atenção: Multa por Cancelamento</Text>
-                    <Text style={styles.multaDesc}>
-                      Faltam menos de 7 dias — multa de 30% do valor total.
-                    </Text>
+                    <Text style={styles.multaDesc}>Faltam menos de 7 dias — multa de 30% do valor total.</Text>
                     <Text style={styles.multaValor}>Multa: R$ {multa.toFixed(2)}</Text>
                   </View>
                 </View>
@@ -359,11 +344,7 @@ const styles = StyleSheet.create({
   },
   daysInfoText: { fontSize: FontSizes.sm, color: Colors.blue },
 
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: Spacing[3],
-  },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: Spacing[3] },
   infoLabel: { fontSize: FontSizes.xs, color: Colors.gray[500] },
   infoValue: { fontSize: FontSizes.sm, fontWeight: '600', color: Colors.gray[800] },
 
@@ -381,7 +362,6 @@ const styles = StyleSheet.create({
 
   acoesBtns: { flexDirection: 'row', gap: 10 },
 
-  // Modals
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalSheet: {
     backgroundColor: Colors.white,
