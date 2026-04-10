@@ -20,6 +20,11 @@ export default function Login() {
       toast.error('Digite seu e-mail.');
       return;
     }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      toast.error('Digite um e-mail válido.');
+      return;
+    }
     const usuario = login(email.trim().toLowerCase());
     if (usuario) {
       toast.success(`Bem-vindo, ${usuario.nome}!`);
