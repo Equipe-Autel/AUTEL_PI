@@ -54,15 +54,20 @@ export default function MeusPets() {
           <Card key={p.id} style={styles.petCard}>
             <CardContent style={styles.petCardContent}>
               <View style={styles.petAvatar}>
-                <Ionicons name={p.especie === 'Gato' ? 'logo-octocat' : 'paw'} size={28} color={Colors.teal} />
+                <Ionicons name={p.especie === 'Gato' ? 'paw-outline' : 'paw'} size={28} color={Colors.teal} />
               </View>
               <View style={{ flex: 1 }}>
                 <View style={styles.petCardHeader}>
                   <Text style={styles.petNome}>{p.nome}</Text>
-                  <Badge variant="secondary">{p.especie}</Badge>
+                  <View style={styles.badgeRow}>
+                    <Badge variant="secondary">{p.especie}</Badge>
+                    <Badge variant={p.comportamento === 'Calmo' ? 'success' : p.comportamento === 'Agitado' ? 'warning' : 'destructive'}>
+                      {p.comportamento}
+                    </Badge>
+                  </View>
                 </View>
                 <Text style={styles.petInfo}>{p.raca} · {p.porte} · {p.sexo}</Text>
-                <Text style={styles.petInfo}>{p.idade} anos · {p.peso} kg · {p.castrado ? 'Castrado' : 'Não castrado'}</Text>
+                <Text style={styles.petInfo}>{p.idade < 1 ? 'Filhote' : `${p.idade} ${p.idade === 1 ? 'ano' : 'anos'}`} · {p.peso} kg · {p.castrado ? 'Castrado' : 'Não castrado'}</Text>
                 {p.observacoesSaude ? (
                   <Text style={styles.petObs}>{p.observacoesSaude}</Text>
                 ) : null}
@@ -105,4 +110,5 @@ const styles = StyleSheet.create({
   petInfo: { fontSize: FontSizes.xs, color: Colors.gray[500], marginTop: 2 },
   petObs: { fontSize: FontSizes.xs, color: Colors.gray[400], marginTop: 4, fontStyle: 'italic' },
   deleteBtn: { paddingLeft: Spacing[2], justifyContent: 'center' },
+  badgeRow: { flexDirection: 'row', gap: 4 },
 });
