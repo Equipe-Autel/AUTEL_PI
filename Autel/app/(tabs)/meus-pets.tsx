@@ -1,16 +1,18 @@
 import React, { useEffect } from 'react';
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Card, CardContent } from '../../src/components/ui/Card';
 import { Button } from '../../src/components/ui/Button';
 import { Badge } from '../../src/components/ui/Badge';
 import { useApp } from '../../src/context/AppContext';
+import { useToast } from '../../src/components/ui/Toast';
 import { Pet } from '../../src/types';
 import { Colors, FontSizes, Spacing, BorderRadius } from '../../src/constants/theme';
 
 export default function MeusPets() {
-  const { usuarioLogado, pets, removerPet } = useApp();
+  const { usuarioLogado, pets, reservas, removerPet } = useApp();
+  const { toast } = useToast();
   const router = useRouter();
 
   useEffect(() => {
@@ -21,12 +23,26 @@ export default function MeusPets() {
 
   if (!usuarioLogado) return null;
 
-  const meusPets = pets.filter(p => p.usuarioId === usuarioLogado.id);
+  const meusPets = pets
+    .filter(p => p.usuarioId === usuarioLogado.id)
+    .sort((a, b) => a.nome.localeCompare(b.nome));
 
   const handleRemover = (pet: Pet) => {
-    Alert.alert('Remover pet', `Deseja remover ${pet.nome}?`, [
+    const reservasAtivas = reservas.filter(r => r.petId === pet.id && r.status === 'Ativa');
+    const mensagem = reservasAtivas.length > 0
+      ? `${pet.nome} tem ${reservasAtivas.length} reserva(s) ativa(s). Ao remover, elas serão canceladas.`
+      : `Deseja remover ${pet.nome}?`;
+
+    Alert.alert('Remover pet', mensagem, [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Remover', style: 'destructive', onPress: () => removerPet(pet.id) },
+      {
+        text: 'Remover',
+        style: 'destructive',
+        onPress: () => {
+          removerPet(pet.id);
+          toast.success(`${pet.nome} removido(a) com sucesso.`);
+        },
+      },
     ]);
   };
 
@@ -54,7 +70,11 @@ export default function MeusPets() {
           <Card key={p.id} style={styles.petCard}>
             <CardContent style={styles.petCardContent}>
               <View style={styles.petAvatar}>
-                <Ionicons name={p.especie === 'Gato' ? 'paw-outline' : 'paw'} size={28} color={Colors.teal} />
+                <MaterialCommunityIcons
+                  name={p.especie === 'Gato' ? 'cat' : 'dog'}
+                  size={28}
+                  color={Colors.teal}
+                />
               </View>
               <View style={{ flex: 1 }}>
                 <View style={styles.petCardHeader}>
@@ -72,9 +92,14 @@ export default function MeusPets() {
                   <Text style={styles.petObs}>{p.observacoesSaude}</Text>
                 ) : null}
               </View>
-              <TouchableOpacity onPress={() => handleRemover(p)} style={styles.deleteBtn}>
-                <Ionicons name="close-circle" size={22} color={Colors.red} />
-              </TouchableOpacity>
+              <View style={styles.actions}>
+                <TouchableOpacity onPress={() => router.push(`/editar-pet/${p.id}` as any)}>
+                  <Ionicons name="create-outline" size={22} color={Colors.teal} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleRemover(p)}>
+                  <Ionicons name="close-circle" size={22} color={Colors.red} />
+                </TouchableOpacity>
+              </View>
             </CardContent>
           </Card>
         ))}
@@ -109,6 +134,6 @@ const styles = StyleSheet.create({
   petNome: { fontSize: FontSizes.base, fontWeight: '700', color: Colors.gray[900], flex: 1, marginRight: 8 },
   petInfo: { fontSize: FontSizes.xs, color: Colors.gray[500], marginTop: 2 },
   petObs: { fontSize: FontSizes.xs, color: Colors.gray[400], marginTop: 4, fontStyle: 'italic' },
-  deleteBtn: { paddingLeft: Spacing[2], justifyContent: 'center' },
+  actions: { flexDirection: 'column', gap: Spacing[2], paddingLeft: Spacing[2], justifyContent: 'center' },
   badgeRow: { flexDirection: 'row', gap: 4 },
 });
