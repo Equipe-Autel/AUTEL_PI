@@ -1,52 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ScrollView,
   View,
   Text,
   TextInput,
   StyleSheet,
-  TouchableOpacity,
   Switch,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../src/components/ui/Card';
-import { Button } from '../src/components/ui/Button';
-import { Input } from '../src/components/ui/Input';
-import { Select } from '../src/components/ui/Select';
-import { useApp } from '../src/context/AppContext';
-import { useToast } from '../src/components/ui/Toast';
-import { Colors, FontSizes, Spacing, BorderRadius } from '../src/constants/theme';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../src/components/ui/Card';
+import { Button } from '../../src/components/ui/Button';
+import { Input } from '../../src/components/ui/Input';
+import { Select } from '../../src/components/ui/Select';
+import { useApp } from '../../src/context/AppContext';
+import { useToast } from '../../src/components/ui/Toast';
+import { Colors, FontSizes, Spacing, BorderRadius } from '../../src/constants/theme';
 
-export default function CadastroPet() {
-  const { usuarioLogado, adicionarPet } = useApp();
+export default function EditarPet() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { usuarioLogado, pets, atualizarPet } = useApp();
   const { toast } = useToast();
   const router = useRouter();
 
+  const pet = pets.find(p => p.id === id);
+
   const [form, setForm] = useState({
-    nome: '',
-    especie: 'Cachorro' as 'Cachorro' | 'Gato',
-    raca: '',
-    idade: '',
-    peso: '',
-    observacoesSaude: '',
-    porte: 'Médio' as 'Pequeno' | 'Médio' | 'Grande',
-    comportamento: 'Calmo' as 'Calmo' | 'Agitado' | 'Agressivo',
-    brincadeirasFavoritas: '',
-    sexo: 'Macho' as 'Macho' | 'Fêmea',
-    naturalidade: '',
-    castrado: false,
+    nome: pet?.nome ?? '',
+    especie: (pet?.especie ?? 'Cachorro') as 'Cachorro' | 'Gato',
+    raca: pet?.raca ?? '',
+    idade: String(pet?.idade ?? ''),
+    peso: String(pet?.peso ?? ''),
+    observacoesSaude: pet?.observacoesSaude ?? '',
+    porte: (pet?.porte ?? 'Médio') as 'Pequeno' | 'Médio' | 'Grande',
+    comportamento: (pet?.comportamento ?? 'Calmo') as 'Calmo' | 'Agitado' | 'Agressivo',
+    brincadeirasFavoritas: pet?.brincadeirasFavoritas ?? '',
+    sexo: (pet?.sexo ?? 'Macho') as 'Macho' | 'Fêmea',
+    naturalidade: pet?.naturalidade ?? '',
+    castrado: pet?.castrado ?? false,
   });
 
   const set = (key: keyof typeof form) => (val: any) =>
     setForm(prev => ({ ...prev, [key]: val }));
 
-  if (!usuarioLogado) {
+  if (!usuarioLogado || !pet) {
     return (
       <View style={styles.center}>
-        <Text style={styles.centerText}>Você precisa estar logado para cadastrar um pet.</Text>
-        <Button onPress={() => router.push('/login')} style={{ marginTop: Spacing[4] }}>
-          Fazer Login
+        <Text style={styles.centerText}>Pet não encontrado.</Text>
+        <Button onPress={() => router.back()} style={{ marginTop: Spacing[4] }}>
+          Voltar
         </Button>
       </View>
     );
@@ -70,15 +72,9 @@ export default function CadastroPet() {
       return;
     }
 
-    adicionarPet({
-      ...form,
-      idade: idadeNum,
-      peso: pesoNum,
-      usuarioId: usuarioLogado.id,
-    });
-
-    toast.success(`${form.nome} cadastrado com sucesso!`);
-    router.push('/hotel');
+    atualizarPet(pet.id, { ...form, idade: idadeNum, peso: pesoNum });
+    toast.success(`${form.nome} atualizado com sucesso!`);
+    router.back();
   };
 
   return (
@@ -87,15 +83,14 @@ export default function CadastroPet() {
         <Card>
           <CardHeader style={styles.header}>
             <View style={styles.iconWrap}>
-              <Ionicons name="paw-outline" size={32} color={Colors.teal} />
+              <Ionicons name="create-outline" size={32} color={Colors.teal} />
             </View>
-            <CardTitle style={styles.title}>Cadastro de Pet</CardTitle>
+            <CardTitle style={styles.title}>Editar Pet</CardTitle>
             <CardDescription style={styles.desc}>
-              Preencha as informações do seu pet para hospedagem
+              Atualize as informações de {pet.nome}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Informações Básicas */}
             <Text style={styles.sectionLabel}>Informações Básicas</Text>
 
             <Input
@@ -139,7 +134,6 @@ export default function CadastroPet() {
               />
             </View>
 
-            {/* Características */}
             <Text style={[styles.sectionLabel, { marginTop: Spacing[2] }]}>Características</Text>
 
             <View style={styles.row}>
@@ -191,7 +185,6 @@ export default function CadastroPet() {
               placeholder="Ex: Buscar bolinha, brincar com laser"
             />
 
-            {/* Saúde */}
             <Text style={[styles.sectionLabel, { marginTop: Spacing[2] }]}>Informações de Saúde</Text>
 
             <View style={styles.textareaWrap}>
@@ -219,14 +212,10 @@ export default function CadastroPet() {
             </View>
 
             <Button fullWidth onPress={handleSubmit} style={styles.submitBtn}>
-              Cadastrar Pet
+              Salvar Alterações
             </Button>
 
-            <Button
-              variant="outline"
-              fullWidth
-              onPress={() => router.push('/')}
-            >
+            <Button variant="outline" fullWidth onPress={() => router.back()}>
               Cancelar
             </Button>
           </CardContent>
