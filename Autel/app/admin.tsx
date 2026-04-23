@@ -39,6 +39,7 @@ export default function Admin() {
     { label: 'Usuários', value: usuarios.length, icon: 'people', color: Colors.blue },
     { label: 'Pets', value: pets.length, icon: 'paw', color: '#8B5CF6' },
     { label: 'Ativas', value: reservasAtivas.length, icon: 'calendar', color: Colors.green },
+    { label: 'Canceladas', value: reservasCanceladas.length, icon: 'close-circle', color: Colors.red },
     { label: 'Receita', value: `R$${receitaTotal.toFixed(0)}`, icon: 'cash', color: Colors.orange },
   ] as const;
 
