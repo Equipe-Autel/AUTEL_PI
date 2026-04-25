@@ -42,7 +42,7 @@ const fmt = (iso: string) =>
   iso ? new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '';
 
 export default function MinhasReservas() {
-  const { usuarioLogado, reservas, pets, cancelarReserva, atualizarReserva, calcularValorHospedagem } = useApp();
+  const { usuarioLogado, usuarios, reservas, pets, cancelarReserva, atualizarReserva, calcularValorHospedagem } = useApp();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -61,13 +61,18 @@ export default function MinhasReservas() {
 
   if (!usuarioLogado) return null;
 
-  // separação de reservas para melhor organização na tela
-  const minhasReservas = reservas.filter(r => r.usuarioId === usuarioLogado.id);
+  const isAdmin = usuarioLogado.isAdmin;
+
+  // admin vê todas as reservas; usuário comum vê só as suas
+  const minhasReservas = isAdmin
+    ? reservas
+    : reservas.filter(r => r.usuarioId === usuarioLogado.id);
   const ativas = minhasReservas.filter(r => r.status === 'Ativa');
   const historico = minhasReservas.filter(r => r.status !== 'Ativa');
 
   const getPet = (petId: string) => pets.find(p => p.id === petId);
   const getPetNome = (petId: string) => getPet(petId)?.nome ?? 'Pet';
+  const getTutorNome = (usuarioId: string) => usuarios.find(u => u.id === usuarioId)?.nome ?? '—';
 
   // calculo de multa
   const diasRestantes = (dataEntrada: string) =>
@@ -150,6 +155,12 @@ export default function MinhasReservas() {
                           {pet && (
                             <Text style={styles.petInfo}>{pet.especie} • {pet.raca}</Text>
                           )}
+                          {isAdmin && (
+                            <View style={styles.tutorRow}>
+                              <Ionicons name="person-circle-outline" size={13} color={Colors.teal} />
+                              <Text style={styles.tutorText}>{getTutorNome(r.usuarioId)}</Text>
+                            </View>
+                          )}
                         </View>
                         <Badge variant={STATUS_VARIANT[r.status]}>{r.status}</Badge>
                       </View>
@@ -193,14 +204,16 @@ export default function MinhasReservas() {
                         <Text style={styles.valorText}>R$ {r.valorTotal.toFixed(2)}</Text>
                       </View>
 
-                      <View style={styles.acoesBtns}>
-                        <Button variant="outline" size="sm" onPress={() => openEdit(r)} style={{ flex: 1 }}>
-                          <Ionicons name="create-outline" size={16} /> Editar
-                        </Button>
-                        <Button variant="destructive" size="sm" onPress={() => setCancelModal(r)} style={{ flex: 1 }}>
-                          <Ionicons name="close-circle-outline" size={16} /> Cancelar
-                        </Button>
-                      </View>
+                      {r.usuarioId === usuarioLogado.id && (
+                        <View style={styles.acoesBtns}>
+                          <Button variant="outline" size="sm" onPress={() => openEdit(r)} style={{ flex: 1 }}>
+                            <Ionicons name="create-outline" size={16} /> Editar
+                          </Button>
+                          <Button variant="destructive" size="sm" onPress={() => setCancelModal(r)} style={{ flex: 1 }}>
+                            <Ionicons name="close-circle-outline" size={16} /> Cancelar
+                          </Button>
+                        </View>
+                      )}
                     </CardContent>
                   </Card>
                 );
@@ -216,7 +229,15 @@ export default function MinhasReservas() {
                 <Card key={r.id} style={{ ...styles.reservaCard, ...styles.historicoCard }}>
                   <CardHeader style={styles.reservaHeader}>
                     <View style={styles.reservaHeaderRow}>
-                      <Text style={styles.historicoPetNome}>{getPetNome(r.petId)}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.historicoPetNome}>{getPetNome(r.petId)}</Text>
+                        {isAdmin && (
+                          <View style={styles.tutorRow}>
+                            <Ionicons name="person-circle-outline" size={13} color={Colors.teal} />
+                            <Text style={styles.tutorText}>{getTutorNome(r.usuarioId)}</Text>
+                          </View>
+                        )}
+                      </View>
                       <Badge variant={STATUS_VARIANT[r.status]}>{r.status}</Badge>
                     </View>
                   </CardHeader>
@@ -335,6 +356,8 @@ const styles = StyleSheet.create({
   reservaHeader: { paddingBottom: Spacing[3], borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
   reservaHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   petInfo: { fontSize: FontSizes.xs, color: Colors.gray[500], marginTop: 2, fontWeight: '500' },
+  tutorRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  tutorText: { fontSize: FontSizes.xs, fontWeight: '700', color: Colors.teal },
   historicoPetNome: { fontSize: FontSizes.base, fontWeight: '600', color: Colors.gray[600] },
 
   // card de detalhes

@@ -19,10 +19,11 @@ import { useToast } from '../src/components/ui/Toast';
 import { Colors, FontSizes, Spacing, BorderRadius } from '../src/constants/theme';
 
 export default function CadastroPet() {
-  const { usuarioLogado, adicionarPet } = useApp();
+  const { usuarioLogado, usuarios, adicionarPet } = useApp();
   const { toast } = useToast();
   const router = useRouter();
 
+  const [clienteId, setClienteId] = useState('');
   const [form, setForm] = useState({
     nome: '',
     especie: 'Cachorro' as 'Cachorro' | 'Gato',
@@ -52,7 +53,16 @@ export default function CadastroPet() {
     );
   }
 
+  const isAdmin = usuarioLogado.isAdmin;
+  const clientesOptions = usuarios
+    .filter(u => !u.isAdmin)
+    .map(u => ({ label: `${u.nome} — ${u.email}`, value: u.id }));
+
   const handleSubmit = () => {
+    if (isAdmin && !clienteId) {
+      toast.error('Selecione o cliente dono do pet.');
+      return;
+    }
     if (!form.nome || !form.raca || !form.idade || !form.peso) {
       toast.error('Preencha os campos obrigatórios.');
       return;
@@ -74,11 +84,11 @@ export default function CadastroPet() {
       ...form,
       idade: idadeNum,
       peso: pesoNum,
-      usuarioId: usuarioLogado.id,
+      usuarioId: isAdmin ? clienteId : usuarioLogado.id,
     });
 
     toast.success(`${form.nome} cadastrado com sucesso!`);
-    router.push('/hotel');
+    router.back();
   };
 
   return (
@@ -95,6 +105,20 @@ export default function CadastroPet() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Seletor de cliente — somente admin */}
+            {isAdmin && (
+              <>
+                <Text style={styles.sectionLabel}>Atribuir ao Cliente</Text>
+                <Select
+                  label="Cliente *"
+                  options={clientesOptions}
+                  value={clienteId}
+                  onChange={setClienteId}
+                  placeholder="Selecione o cliente"
+                />
+              </>
+            )}
+
             {/* Informações Básicas */}
             <Text style={styles.sectionLabel}>Informações Básicas</Text>
 

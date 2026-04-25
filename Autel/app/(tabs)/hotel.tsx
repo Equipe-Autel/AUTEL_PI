@@ -5,7 +5,6 @@ import {
   Text,
   TextInput,
   StyleSheet,
-  Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,12 +21,6 @@ import { useApp } from '../../src/context/AppContext';
 import { useToast } from '../../src/components/ui/Toast';
 import { Colors, FontSizes, Spacing, BorderRadius } from '../../src/constants/theme';
 
-// CONFIGURAÇÕES DE PREÇOS E OPÇÕES
-const ACOMODACOES = [
-  { label: 'Standard — Simples e Confortável (R$ 80/dia)', value: 'Standard' },
-  { label: 'Premium — Espaço Ampliado (R$ 150/dia)', value: 'Premium' },
-  { label: 'Luxo — Experiência VIP (R$ 250/dia)', value: 'Luxo' },
-];
 
 const ALIMENTACAO = [
   { label: 'Cardápio Autel (Ração Premium inclusa)', value: 'Hotel' },
@@ -35,29 +28,46 @@ const ALIMENTACAO = [
 ];
 
 export default function Hotel() {
-  const { usuarioLogado, pets, adicionarReserva, calcularValorHospedagem, obterVagasDisponiveis } = useApp();
+  const { usuarioLogado, usuarios, pets, planos, adicionarReserva, calcularValorHospedagem, obterVagasDisponiveis } = useApp();
   const { toast } = useToast();
   const router = useRouter();
 
-  // estados do formulário
+  // estados do formulário de reserva
   const [petId, setPetId] = useState('');
   const [dataEntrada, setDataEntrada] = useState('');
   const [dataSaida, setDataSaida] = useState('');
   const [alimentacao, setAlimentacao] = useState<'Hotel' | 'Tutor'>('Hotel');
-  const [acomodacao, setAcomodacao] = useState<'Standard' | 'Premium' | 'Luxo'>('Standard');
+  const [acomodacao, setAcomodacao] = useState('');
   const [observacoes, setObservacoes] = useState('');
-  
+
   // Estados de cálculo e disponibilidade
   const [valorTotal, setValorTotal] = useState(0);
   const [vagas, setVagas] = useState<number | null>(null);
   const [dias, setDias] = useState(0);
 
-  // Filtragem de pets vinculados ao usuário logado
-  const meusPets = usuarioLogado ? pets.filter(p => p.usuarioId === usuarioLogado.id) : [];
-  const petOptions = meusPets.map(p => ({ 
-    label: `🐾 ${p.nome} (${p.raca})`, 
-    value: p.id 
-  }));
+  const isAdmin = usuarioLogado?.isAdmin ?? false;
+
+  // inicializa acomodação com o primeiro plano disponível
+  useEffect(() => {
+    if (planos.length > 0 && !acomodacao) {
+      setAcomodacao(planos[0].nome);
+    }
+  }, [planos]);
+
+  // Admin vê todos os pets de clientes; usuário comum só os seus
+  const meusPets = !usuarioLogado
+    ? []
+    : isAdmin
+      ? pets.filter(p => !usuarios.find(u => u.id === p.usuarioId)?.isAdmin)
+      : pets.filter(p => p.usuarioId === usuarioLogado.id);
+
+  const petOptions = meusPets.map(p => {
+    if (isAdmin) {
+      const tutor = usuarios.find(u => u.id === p.usuarioId);
+      return { label: `🐾 ${p.nome} (${p.raca}) — ${tutor?.nome ?? '?'}`, value: p.id };
+    }
+    return { label: `🐾 ${p.nome} (${p.raca})`, value: p.id };
+  });
   const hoje = new Date().toISOString().split('T')[0];
 
   //Atualiza valor total e vagas sempre que datas ou acomodação mudam
@@ -99,18 +109,26 @@ export default function Hotel() {
     );
   }
 
-  //bloqueio por falta de Pets
+  // bloqueio por falta de Pets
   if (meusPets.length === 0) {
     return (
       <View style={styles.center}>
         <Ionicons name="paw-outline" size={64} color={Colors.orange} />
         <Text style={styles.centerTitle}>Nenhum Pet Encontrado</Text>
-        <Text style={styles.centerDesc}>
-          Identificamos que você ainda não cadastrou seu amiguinho. Vamos fazer isso agora?
-        </Text>
-        <Button onPress={() => router.push('/cadastro-pet')} style={{ marginTop: 16 }}>
-          Cadastrar meu Pet
-        </Button>
+        {isAdmin ? (
+          <Text style={styles.centerDesc}>
+            Nenhum cliente possui pets cadastrados no momento. Use a aba Cadastro para adicionar um pet.
+          </Text>
+        ) : (
+          <>
+            <Text style={styles.centerDesc}>
+              Identificamos que você ainda não cadastrou seu amiguinho. Vamos fazer isso agora?
+            </Text>
+            <Button onPress={() => router.push('/cadastro-pet')} style={{ marginTop: 16 }}>
+              Cadastrar meu Pet
+            </Button>
+          </>
+        )}
       </View>
     );
   }
@@ -123,9 +141,12 @@ export default function Hotel() {
       toast.error('Infelizmente não temos vagas para este período.'); return;
     }
 
+    const petSelecionado = meusPets.find(p => p.id === petId);
+    const donoPetId = isAdmin && petSelecionado ? petSelecionado.usuarioId : usuarioLogado.id;
+
     adicionarReserva({
       petId,
-      usuarioId: usuarioLogado.id,
+      usuarioId: donoPetId,
       dataEntrada,
       dataSaidaPrevista: dataSaida,
       responsavelAlimentacao: alimentacao,
@@ -198,9 +219,10 @@ export default function Hotel() {
 
             <Select
               label="Tipo de Acomodação *"
-              options={ACOMODACOES}
+              options={planos.map(p => ({ label: `${p.nome} — ${p.descricao} (R$ ${p.preco}/dia)`, value: p.nome }))}
               value={acomodacao}
-              onChange={v => setAcomodacao(v as any)}
+              onChange={setAcomodacao}
+              placeholder="Selecione um plano"
             />
 
             <Select
