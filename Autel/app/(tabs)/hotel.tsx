@@ -5,56 +5,80 @@ import {
   Text,
   TextInput,
   StyleSheet,
-  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+
+// Componentes UI do sistema
 import { Card, CardHeader, CardTitle, CardContent } from '../../src/components/ui/Card';
 import { Button } from '../../src/components/ui/Button';
 import { Input } from '../../src/components/ui/Input';
 import { Select } from '../../src/components/ui/Select';
 import { DatePicker } from '../../src/components/ui/DatePicker';
+
+// Contexto e Hooks
 import { useApp } from '../../src/context/AppContext';
 import { useToast } from '../../src/components/ui/Toast';
 import { Colors, FontSizes, Spacing, BorderRadius } from '../../src/constants/theme';
 
-const ACOMODACOES = [
-  { label: 'Standard — R$ 80/dia', value: 'Standard' },
-  { label: 'Premium — R$ 150/dia', value: 'Premium' },
-  { label: 'Luxo — R$ 250/dia', value: 'Luxo' },
-];
 
 const ALIMENTACAO = [
-  { label: 'Hotel (cardápio padrão)', value: 'Hotel' },
-  { label: 'Tutor (trarei a ração)', value: 'Tutor' },
+  { label: 'Cardápio Autel (Ração Premium inclusa)', value: 'Hotel' },
+  { label: 'Alimentação Própria (Tutor fornece)', value: 'Tutor' },
 ];
 
 export default function Hotel() {
-  const { usuarioLogado, pets, adicionarReserva, calcularValorHospedagem, obterVagasDisponiveis } = useApp();
+  const { usuarioLogado, usuarios, pets, planos, adicionarReserva, calcularValorHospedagem, obterVagasDisponiveis } = useApp();
   const { toast } = useToast();
   const router = useRouter();
 
+  // estados do formulário de reserva
   const [petId, setPetId] = useState('');
   const [dataEntrada, setDataEntrada] = useState('');
   const [dataSaida, setDataSaida] = useState('');
   const [alimentacao, setAlimentacao] = useState<'Hotel' | 'Tutor'>('Hotel');
-  const [acomodacao, setAcomodacao] = useState<'Standard' | 'Premium' | 'Luxo'>('Standard');
+  const [acomodacao, setAcomodacao] = useState('');
   const [observacoes, setObservacoes] = useState('');
+
+  // Estados de cálculo e disponibilidade
   const [valorTotal, setValorTotal] = useState(0);
   const [vagas, setVagas] = useState<number | null>(null);
   const [dias, setDias] = useState(0);
 
-  const meusPets = usuarioLogado ? pets.filter(p => p.usuarioId === usuarioLogado.id) : [];
-  const petOptions = meusPets.map(p => ({ label: `${p.nome} — ${p.especie} (${p.raca})`, value: p.id }));
+  const isAdmin = usuarioLogado?.isAdmin ?? false;
+
+  // inicializa acomodação com o primeiro plano disponível
+  useEffect(() => {
+    if (planos.length > 0 && !acomodacao) {
+      setAcomodacao(planos[0].nome);
+    }
+  }, [planos]);
+
+  // Admin vê todos os pets de clientes; usuário comum só os seus
+  const meusPets = !usuarioLogado
+    ? []
+    : isAdmin
+      ? pets.filter(p => !usuarios.find(u => u.id === p.usuarioId)?.isAdmin)
+      : pets.filter(p => p.usuarioId === usuarioLogado.id);
+
+  const petOptions = meusPets.map(p => {
+    if (isAdmin) {
+      const tutor = usuarios.find(u => u.id === p.usuarioId);
+      return { label: `🐾 ${p.nome} (${p.raca}) — ${tutor?.nome ?? '?'}`, value: p.id };
+    }
+    return { label: `🐾 ${p.nome} (${p.raca})`, value: p.id };
+  });
   const hoje = new Date().toISOString().split('T')[0];
 
+  //Atualiza valor total e vagas sempre que datas ou acomodação mudam
   useEffect(() => {
     if (dataEntrada && dataSaida) {
       const entrada = new Date(dataEntrada);
       const saida = new Date(dataSaida);
+      
       if (saida > entrada) {
-        const d = Math.ceil((saida.getTime() - entrada.getTime()) / 86400000);
-        setDias(d);
+        const diffTempo = Math.ceil((saida.getTime() - entrada.getTime()) / 86400000);
+        setDias(diffTempo);
         setValorTotal(calcularValorHospedagem(dataEntrada, dataSaida, acomodacao));
         setVagas(obterVagasDisponiveis(dataEntrada, dataSaida));
       } else {
@@ -65,50 +89,64 @@ export default function Hotel() {
     }
   }, [dataEntrada, dataSaida, acomodacao]);
 
+  // Bloqueio por Login
+  
   if (!usuarioLogado) {
     return (
       <View style={styles.center}>
-        <Ionicons name="home-outline" size={64} color={Colors.teal} />
-        <Text style={styles.centerTitle}>Faça Login para Reservar</Text>
-        <Text style={styles.centerDesc}>Você precisa estar logado para fazer uma reserva.</Text>
+        <View style={styles.iconCircle}>
+          <Ionicons name="lock-closed-outline" size={40} color={Colors.teal} />
+        </View>
+        <Text style={styles.centerTitle}>Acesso Restrito</Text>
+        <Text style={styles.centerDesc}>Para reservar uma estadia, por favor, acesse sua conta ou crie uma nova.</Text>
         <View style={styles.centerBtns}>
-          <Button fullWidth onPress={() => router.push('/login')}>Fazer Login</Button>
-          <Button variant="outline" fullWidth onPress={() => router.push('/cadastro-usuario')} style={{ marginTop: 10 }}>
-            Cadastrar
+          <Button fullWidth onPress={() => router.push('/login')}>Entrar na Conta</Button>
+          <Button variant="outline" fullWidth onPress={() => router.push('/cadastro-usuario')} style={{ marginTop: 12 }}>
+            Criar Cadastro
           </Button>
         </View>
       </View>
     );
   }
 
+  // bloqueio por falta de Pets
   if (meusPets.length === 0) {
     return (
       <View style={styles.center}>
-        <Ionicons name="alert-circle-outline" size={64} color={Colors.orange} />
-        <Text style={styles.centerTitle}>Cadastre um Pet Primeiro</Text>
-        <Text style={styles.centerDesc}>
-          Você precisa cadastrar pelo menos um pet antes de fazer uma reserva.
-        </Text>
-        <Button onPress={() => router.push('/cadastro-pet')} style={{ marginTop: 16 }}>
-          Cadastrar Pet
-        </Button>
+        <Ionicons name="paw-outline" size={64} color={Colors.orange} />
+        <Text style={styles.centerTitle}>Nenhum Pet Encontrado</Text>
+        {isAdmin ? (
+          <Text style={styles.centerDesc}>
+            Nenhum cliente possui pets cadastrados no momento. Use a aba Cadastro para adicionar um pet.
+          </Text>
+        ) : (
+          <>
+            <Text style={styles.centerDesc}>
+              Identificamos que você ainda não cadastrou seu amiguinho. Vamos fazer isso agora?
+            </Text>
+            <Button onPress={() => router.push('/cadastro-pet')} style={{ marginTop: 16 }}>
+              Cadastrar meu Pet
+            </Button>
+          </>
+        )}
       </View>
     );
   }
 
   const handleSubmit = () => {
-    if (!petId) { toast.error('Selecione um pet para a reserva.'); return; }
-    if (!dataEntrada || !dataSaida) { toast.error('Selecione as datas de entrada e saída.'); return; }
-    if (new Date(dataSaida) <= new Date(dataEntrada)) {
-      toast.error('A data de saída deve ser posterior à entrada.'); return;
-    }
+    if (!petId) { toast.error('Por favor, selecione qual pet ficará conosco.'); return; }
+    if (!dataEntrada || !dataSaida) { toast.error('As datas de check-in e check-out são obrigatórias.'); return; }
+    
     if (vagas !== null && vagas <= 0) {
-      toast.error('Não há vagas disponíveis para este período.'); return;
+      toast.error('Infelizmente não temos vagas para este período.'); return;
     }
+
+    const petSelecionado = meusPets.find(p => p.id === petId);
+    const donoPetId = isAdmin && petSelecionado ? petSelecionado.usuarioId : usuarioLogado.id;
 
     adicionarReserva({
       petId,
-      usuarioId: usuarioLogado.id,
+      usuarioId: donoPetId,
       dataEntrada,
       dataSaidaPrevista: dataSaida,
       responsavelAlimentacao: alimentacao,
@@ -119,36 +157,39 @@ export default function Hotel() {
     });
 
     const pet = meusPets.find(p => p.id === petId);
-    toast.success(`Reserva confirmada para ${pet?.nome}!`);
+    toast.success(`Reserva para ${pet?.nome} realizada com sucesso!`);
     router.push('/minhas-reservas');
   };
 
+  // Lógica de cor para o banner de vagas
   const vagaColor =
     vagas === null ? Colors.gray[400]
     : vagas === 0 ? Colors.red
-    : vagas <= 5 ? Colors.yellow
+    : vagas <= 3 ? Colors.orange // Mais urgente 
     : Colors.green;
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.content}>
-        <Card>
+        <Card style={styles.mainCard}>
           <CardHeader>
-            <CardTitle>Dados da Reserva</CardTitle>
+            <CardTitle>Nova Hospedagem</CardTitle>
+            <Text style={styles.subtitle}>Preencha os detalhes para a estadia</Text>
           </CardHeader>
+          
           <CardContent>
             <Select
-              label="Selecione o Pet *"
+              label="Quem vai se hospedar? *"
               options={petOptions}
               value={petId}
               onChange={setPetId}
-              placeholder="Escolha um pet"
+              placeholder="Selecione um pet"
             />
 
             <View style={styles.row}>
               <View style={styles.half}>
                 <DatePicker
-                  label="Entrada *"
+                  label="Check-in *"
                   value={dataEntrada}
                   onChange={setDataEntrada}
                   minimumDate={hoje}
@@ -156,7 +197,7 @@ export default function Hotel() {
               </View>
               <View style={styles.half}>
                 <DatePicker
-                  label="Saída *"
+                  label="Check-out *"
                   value={dataSaida}
                   onChange={setDataSaida}
                   minimumDate={dataEntrada || hoje}
@@ -164,38 +205,40 @@ export default function Hotel() {
               </View>
             </View>
 
+            {/* Banner disponibilidade  */}
             {vagas !== null && dataEntrada && dataSaida && (
-              <View style={[styles.vagasBanner, { backgroundColor: `${vagaColor}22`, borderColor: vagaColor }]}>
-                <Ionicons name="calendar-outline" size={16} color={vagaColor} />
+              <View style={[styles.vagasBanner, { backgroundColor: `${vagaColor}15`, borderColor: vagaColor }]}>
+                <Ionicons name="information-circle-outline" size={18} color={vagaColor} />
                 <Text style={[styles.vagasText, { color: vagaColor }]}>
                   {vagas === 0
-                    ? 'Sem vagas disponíveis'
-                    : `${vagas} vaga${vagas !== 1 ? 's' : ''} disponível${vagas !== 1 ? 's' : ''}${vagas <= 5 ? ' — Reserve logo!' : ''}`}
+                    ? 'Esgotado para estas datas'
+                    : `${vagas} ${vagas === 1 ? 'vaga restante' : 'vagas disponíveis'}${vagas <= 3 ? ' — Garanta já!' : ''}`}
                 </Text>
               </View>
             )}
 
             <Select
               label="Tipo de Acomodação *"
-              options={ACOMODACOES}
+              options={planos.map(p => ({ label: `${p.nome} — ${p.descricao} (R$ ${p.preco}/dia)`, value: p.nome }))}
               value={acomodacao}
-              onChange={v => setAcomodacao(v as any)}
+              onChange={setAcomodacao}
+              placeholder="Selecione um plano"
             />
 
             <Select
-              label="Responsável pela Alimentação *"
+              label="Preferência de Alimentação *"
               options={ALIMENTACAO}
               value={alimentacao}
               onChange={v => setAlimentacao(v as any)}
             />
 
             <View style={styles.textareaContainer}>
-              <Text style={styles.textareaLabel}>Observações</Text>
+              <Text style={styles.textareaLabel}>Observações e Cuidados Especiais</Text>
               <TextInput
                 style={styles.textarea}
                 value={observacoes}
                 onChangeText={setObservacoes}
-                placeholder="Alergias, preferências alimentares, medicações..."
+                placeholder="Ex: Alergia a frango, precisa tomar remédio às 08h..."
                 placeholderTextColor={Colors.gray[400]}
                 multiline
                 numberOfLines={3}
@@ -203,32 +246,36 @@ export default function Hotel() {
               />
             </View>
 
+            {/* Resumo Financeiro */}
             {valorTotal > 0 && (
               <View style={styles.resumo}>
                 <View style={styles.resumoRow}>
                   <View>
-                    <Text style={styles.resumoLabel}>Período</Text>
-                    <Text style={styles.resumoValue}>{dias} {dias === 1 ? 'dia' : 'dias'}</Text>
+                    <Text style={styles.resumoLabel}>Duração</Text>
+                    <Text style={styles.resumoValue}>{dias} {dias === 1 ? 'diária' : 'diárias'}</Text>
                   </View>
                   <View style={styles.resumoRight}>
-                    <Text style={styles.resumoLabel}>Valor Total</Text>
+                    <Text style={styles.resumoLabel}>Investimento</Text>
                     <Text style={styles.resumoPrice}>R$ {valorTotal.toFixed(2)}</Text>
                   </View>
                 </View>
                 <View style={styles.divider} />
-                <Text style={styles.resumoNote}>
-                  * Cancelamentos com menos de 7 dias terão multa de 30%
-                </Text>
+                <View style={styles.infoRow}>
+                  <Ionicons name="shield-checkmark-outline" size={14} color={Colors.gray[500]} />
+                  <Text style={styles.resumoNote}>
+                    Cancelamento gratuito até 7 dias antes do check-in.
+                  </Text>
+                </View>
               </View>
             )}
 
             <Button
               fullWidth
-              disabled={vagas === 0}
+              disabled={vagas === 0 || !petId}
               onPress={handleSubmit}
               style={{ marginTop: Spacing[2] }}
             >
-              Confirmar Reserva
+              Finalizar Reserva
             </Button>
           </CardContent>
         </Card>
@@ -240,52 +287,71 @@ export default function Hotel() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.beige },
   content: { padding: Spacing[4], paddingBottom: Spacing[8] },
+  mainCard: { elevation: 2, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4 },
+  subtitle: { fontSize: FontSizes.sm, color: Colors.gray[500], marginTop: -4, marginBottom: 10 },
+  
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: Spacing[6],
+    padding: Spacing[8],
+    backgroundColor: Colors.beige,
   },
-  centerTitle: { fontSize: FontSizes.xl, fontWeight: '700', color: Colors.gray[900], marginTop: Spacing[4], textAlign: 'center' },
-  centerDesc: { fontSize: FontSizes.sm, color: Colors.gray[500], textAlign: 'center', marginTop: Spacing[2], marginBottom: Spacing[4] },
+  iconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing[4],
+  },
+  centerTitle: { fontSize: FontSizes['2xl'], fontWeight: '800', color: Colors.gray[900], textAlign: 'center' },
+  centerDesc: { fontSize: FontSizes.base, color: Colors.gray[600], textAlign: 'center', marginTop: Spacing[3], marginBottom: Spacing[6], lineHeight: 22 },
   centerBtns: { width: '100%' },
-  row: { flexDirection: 'row', gap: 10 },
+  
+  row: { flexDirection: 'row', gap: 12 },
   half: { flex: 1 },
+  
   vagasBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    borderWidth: 1,
-    borderRadius: BorderRadius.md,
+    borderWidth: 1.5,
+    borderRadius: BorderRadius.lg,
     padding: Spacing[3],
-    marginBottom: Spacing[3],
+    marginVertical: Spacing[2],
+    marginBottom: Spacing[4],
   },
-  vagasText: { fontSize: FontSizes.sm, fontWeight: '600', flex: 1 },
-  textareaContainer: { marginBottom: Spacing[3] },
-  textareaLabel: { fontSize: FontSizes.sm, fontWeight: '500', color: Colors.gray[700], marginBottom: 6 },
+  vagasText: { fontSize: FontSizes.sm, fontWeight: '700', flex: 1 },
+  
+  textareaContainer: { marginBottom: Spacing[4] },
+  textareaLabel: { fontSize: FontSizes.sm, fontWeight: '600', color: Colors.gray[700], marginBottom: 8 },
   textarea: {
     borderWidth: 1.5,
-    borderColor: Colors.gray[300],
-    borderRadius: BorderRadius.md,
+    borderColor: Colors.gray[200],
+    borderRadius: BorderRadius.lg,
     padding: Spacing[3],
     fontSize: FontSizes.base,
     color: Colors.gray[900],
-    backgroundColor: Colors.white,
-    minHeight: 80,
+    backgroundColor: '#F9FAFB',
+    minHeight: 100,
   },
+  
   resumo: {
-    backgroundColor: Colors.tealLight,
-    borderLeftWidth: 4,
+    backgroundColor: '#E6FFFA', // Um teal bem clarinho para destacar
+    borderLeftWidth: 5,
     borderLeftColor: Colors.teal,
-    borderRadius: BorderRadius.md,
+    borderRadius: BorderRadius.lg,
     padding: Spacing[4],
-    marginBottom: Spacing[3],
+    marginBottom: Spacing[5],
   },
-  resumoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  resumoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   resumoRight: { alignItems: 'flex-end' },
-  resumoLabel: { fontSize: FontSizes.sm, color: Colors.gray[500] },
-  resumoValue: { fontSize: FontSizes.base, fontWeight: '600', color: Colors.gray[800] },
-  resumoPrice: { fontSize: FontSizes['2xl'], fontWeight: '800', color: Colors.teal },
-  divider: { height: 1, backgroundColor: Colors.teal, opacity: 0.2, marginVertical: Spacing[2] },
-  resumoNote: { fontSize: FontSizes.xs, color: Colors.gray[500] },
+  resumoLabel: { fontSize: FontSizes.xs, textTransform: 'uppercase', letterSpacing: 1, color: Colors.gray[500], marginBottom: 2 },
+  resumoValue: { fontSize: FontSizes.base, fontWeight: '700', color: Colors.gray[800] },
+  resumoPrice: { fontSize: FontSizes['2xl'], fontWeight: '900', color: Colors.teal },
+  divider: { height: 1, backgroundColor: Colors.teal, opacity: 0.1, marginVertical: Spacing[3] },
+  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  resumoNote: { fontSize: FontSizes.xs, color: Colors.gray[600], fontStyle: 'italic' },
 });

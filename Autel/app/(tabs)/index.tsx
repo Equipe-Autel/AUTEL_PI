@@ -91,6 +91,11 @@ export default function Home() {
   const { usuarioLogado } = useApp();
   const [planoSelecionado, setPlanoSelecionado] = useState<Plano | null>(null);
 
+  if (usuarioLogado?.isAdmin) {
+    router.replace('/(tabs)/admin');
+    return null;
+  }
+
   return (
     <>
     <Modal

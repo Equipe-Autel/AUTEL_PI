@@ -34,9 +34,16 @@ export interface Reserva {
   dataSaidaPrevista: string;
   dataSaida?: string;
   responsavelAlimentacao: 'Tutor' | 'Hotel';
-  tipoAcomodacao: 'Standard' | 'Premium' | 'Luxo';
+  tipoAcomodacao: string;
   observacoesComida: string;
   status: 'Ativa' | 'Cancelada' | 'Finalizada';
   valorTotal: number;
   dataCadastro: string;
+}
+
+export interface Plano {
+  id: string;
+  nome: string;
+  descricao: string;
+  preco: number;
 }

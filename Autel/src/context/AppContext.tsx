@@ -1,18 +1,20 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Usuario, Pet, Reserva } from '../types';
+import { Usuario, Pet, Reserva, Plano } from '../types';
 import { getItem, setItem, removeItem, STORAGE_KEYS, generateId, USUARIOS_PADRAO } from '../utils/storage';
 
-const VAGAS_TOTAIS = 20;
-const VALORES_DIARIA = {
-  Standard: 80,
-  Premium: 150,
-  Luxo: 250,
-};
+const PLANOS_PADRAO: Plano[] = [
+  { id: 'standard', nome: 'Standard', descricao: 'Simples e Confortável', preco: 80 },
+  { id: 'premium', nome: 'Premium', descricao: 'Espaço Ampliado', preco: 150 },
+  { id: 'luxo', nome: 'Luxo', descricao: 'Experiência VIP', preco: 250 },
+];
+const VAGAS_PADRAO = 20;
 
 interface AppContextData {
   usuarios: Usuario[];
   pets: Pet[];
   reservas: Reserva[];
+  planos: Plano[];
+  vagasTotais: number;
   usuarioLogado: Usuario | null;
   loading: boolean;
   adicionarUsuario: (usuario: Omit<Usuario, 'id'>) => Usuario;
@@ -27,6 +29,10 @@ interface AppContextData {
   cancelarReserva: (id: string) => { sucesso: boolean; multa: number };
   calcularValorHospedagem: (dataEntrada: string, dataSaida: string, tipoAcomodacao: string) => number;
   obterVagasDisponiveis: (dataEntrada: string, dataSaida: string) => number;
+  adicionarPlano: (plano: Omit<Plano, 'id'>) => void;
+  atualizarPlano: (id: string, dados: Partial<Omit<Plano, 'id'>>) => void;
+  removerPlano: (id: string) => void;
+  atualizarVagasTotais: (vagas: number) => void;
   login: (email: string) => Usuario | null;
   logout: () => void;
   resetDados: () => Promise<void>;
@@ -40,22 +46,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [pets, setPets] = useState<Pet[]>([]);
   const [reservas, setReservas] = useState<Reserva[]>([]);
+  const [planos, setPlanos] = useState<Plano[]>(PLANOS_PADRAO);
+  const [vagasTotais, setVagasTotais] = useState<number>(VAGAS_PADRAO);
   const [usuarioLogado, setUsuarioLogado] = useState<Usuario | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Carrega dados do AsyncStorage na inicialização
   useEffect(() => {
     const loadData = async () => {
-      const [storedUsuarios, storedPets, storedReservas, storedUsuarioLogado] = await Promise.all([
+      const [storedUsuarios, storedPets, storedReservas, storedUsuarioLogado, storedPlanos, storedVagas] = await Promise.all([
         getItem<Usuario[]>(STORAGE_KEYS.USUARIOS),
         getItem<Pet[]>(STORAGE_KEYS.PETS),
         getItem<Reserva[]>(STORAGE_KEYS.RESERVAS),
         getItem<Usuario>(STORAGE_KEYS.USUARIO_LOGADO),
+        getItem<Plano[]>(STORAGE_KEYS.PLANOS),
+        getItem<number>(STORAGE_KEYS.VAGAS_TOTAIS),
       ]);
 
       setUsuarios(storedUsuarios ?? USUARIOS_PADRAO);
       setPets(storedPets ?? []);
       setReservas(storedReservas ?? []);
+      setPlanos(storedPlanos ?? PLANOS_PADRAO);
+      setVagasTotais(storedVagas ?? VAGAS_PADRAO);
       setUsuarioLogado(storedUsuarioLogado ?? null);
       setLoading(false);
     };
@@ -77,6 +89,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     if (!loading) setItem(STORAGE_KEYS.RESERVAS, reservas);
   }, [reservas, loading]);
+
+  // Persiste planos e vagas
+  useEffect(() => {
+    if (!loading) setItem(STORAGE_KEYS.PLANOS, planos);
+  }, [planos, loading]);
+
+  useEffect(() => {
+    if (!loading) setItem(STORAGE_KEYS.VAGAS_TOTAIS, vagasTotais);
+  }, [vagasTotais, loading]);
 
   // Persiste usuário logado
   useEffect(() => {
@@ -131,8 +152,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const entrada = new Date(dataEntrada);
     const saida = new Date(dataSaida);
     const dias = Math.ceil((saida.getTime() - entrada.getTime()) / (1000 * 60 * 60 * 24));
-    const valorDiaria = VALORES_DIARIA[tipoAcomodacao as keyof typeof VALORES_DIARIA] ?? 80;
-    return Math.max(0, dias * valorDiaria);
+    const plano = planos.find(p => p.nome === tipoAcomodacao);
+    return Math.max(0, dias * (plano?.preco ?? 80));
   };
 
   const obterVagasDisponiveis = (dataEntrada: string, dataSaida: string): number => {
@@ -144,7 +165,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const rSaida = new Date(r.dataSaidaPrevista);
       return entrada <= rSaida && saida >= rEntrada;
     });
-    return VAGAS_TOTAIS - conflitantes.length;
+    return vagasTotais - conflitantes.length;
+  };
+
+  const adicionarPlano = (plano: Omit<Plano, 'id'>) => {
+    const novo: Plano = { ...plano, id: `plano-${generateId()}` };
+    setPlanos(prev => [...prev, novo]);
+  };
+
+  const atualizarPlano = (id: string, dados: Partial<Omit<Plano, 'id'>>) => {
+    setPlanos(prev => prev.map(p => (p.id === id ? { ...p, ...dados } : p)));
+  };
+
+  const removerPlano = (id: string) => {
+    setPlanos(prev => prev.filter(p => p.id !== id));
+  };
+
+  const atualizarVagasTotais = (vagas: number) => {
+    setVagasTotais(vagas);
   };
 
   const adicionarReserva = (reserva: Omit<Reserva, 'id' | 'dataCadastro'>): Reserva => {
@@ -210,6 +248,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         usuarios,
         pets,
         reservas,
+        planos,
+        vagasTotais,
         usuarioLogado,
         loading,
         adicionarUsuario,
@@ -224,6 +264,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         cancelarReserva,
         calcularValorHospedagem,
         obterVagasDisponiveis,
+        adicionarPlano,
+        atualizarPlano,
+        removerPlano,
+        atualizarVagasTotais,
         login,
         logout,
         resetDados,

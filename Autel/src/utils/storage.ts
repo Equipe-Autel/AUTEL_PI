@@ -6,6 +6,8 @@ export const STORAGE_KEYS = {
   PETS: 'autel_pets',
   RESERVAS: 'autel_reservas',
   USUARIO_LOGADO: 'autel_usuario_logado',
+  PLANOS: 'autel_planos',
+  VAGAS_TOTAIS: 'autel_vagas_totais',
 };
 
 export const getItem = async <T>(key: string): Promise<T | null> => {

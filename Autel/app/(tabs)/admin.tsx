@@ -1,27 +1,61 @@
-import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { ScrollView, View, Text, StyleSheet, TouchableOpacity, Alert, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, CardHeader, CardTitle, CardContent } from '../src/components/ui/Card';
-import { Badge } from '../src/components/ui/Badge';
-import { useApp } from '../src/context/AppContext';
-import { Colors, FontSizes, Spacing, BorderRadius } from '../src/constants/theme';
+import { Card, CardHeader, CardTitle, CardContent } from '../../src/components/ui/Card';
+import { Badge } from '../../src/components/ui/Badge';
+import { Button } from '../../src/components/ui/Button';
+import { Input } from '../../src/components/ui/Input';
+import { useApp } from '../../src/context/AppContext';
+import { Colors, FontSizes, Spacing, BorderRadius } from '../../src/constants/theme';
+import { Plano } from '../../src/types';
 
-type Tab = 'usuarios' | 'pets' | 'reservas';
+type Tab = 'usuarios' | 'pets' | 'reservas' | 'planos';
 
 const fmt = (iso: string) =>
   iso ? new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '';
 
-export default function Admin() {
-  const { usuarioLogado, usuarios, pets, reservas, removerUsuario, removerPet, removerReserva } = useApp();
-  const router = useRouter();
+export default function AdminTab() {
+  const { usuarioLogado, usuarios, pets, reservas, planos, vagasTotais, removerUsuario, removerPet, removerReserva, adicionarPlano, atualizarPlano, removerPlano, atualizarVagasTotais } = useApp();
   const [tab, setTab] = useState<Tab>('usuarios');
 
-  useEffect(() => {
-    if (!usuarioLogado?.isAdmin) {
-      router.replace('/');
-    }
-  }, [usuarioLogado]);
+  // estados da aba de planos
+  const [editandoPlano, setEditandoPlano] = useState<string | null>(null);
+  const [editNome, setEditNome] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [editPreco, setEditPreco] = useState('');
+  const [novoPlanoAberto, setNovoPlanoAberto] = useState(false);
+  const [novoNome, setNovoNome] = useState('');
+  const [novoDesc, setNovoDesc] = useState('');
+  const [novoPreco, setNovoPreco] = useState('');
+  const [vagasInput, setVagasInput] = useState(String(vagasTotais));
+
+  const abrirEdicao = (p: Plano) => {
+    setEditandoPlano(p.id);
+    setEditNome(p.nome);
+    setEditDesc(p.descricao);
+    setEditPreco(String(p.preco));
+  };
+
+  const salvarEdicao = () => {
+    if (!editandoPlano) return;
+    const preco = parseFloat(editPreco);
+    if (!editNome || isNaN(preco) || preco <= 0) return;
+    atualizarPlano(editandoPlano, { nome: editNome, descricao: editDesc, preco });
+    setEditandoPlano(null);
+  };
+
+  const salvarNovoPlano = () => {
+    const preco = parseFloat(novoPreco);
+    if (!novoNome || isNaN(preco) || preco <= 0) return;
+    adicionarPlano({ nome: novoNome, descricao: novoDesc, preco });
+    setNovoNome(''); setNovoDesc(''); setNovoPreco('');
+    setNovoPlanoAberto(false);
+  };
+
+  const salvarVagas = () => {
+    const v = parseInt(vagasInput);
+    if (!isNaN(v) && v > 0) atualizarVagasTotais(v);
+  };
 
   if (!usuarioLogado?.isAdmin) return null;
 
@@ -40,6 +74,7 @@ export default function Admin() {
     { label: 'Pets', value: pets.length, icon: 'paw', color: '#8B5CF6' },
     { label: 'Ativas', value: reservasAtivas.length, icon: 'calendar', color: Colors.green },
     { label: 'Canceladas', value: reservasCanceladas.length, icon: 'close-circle', color: Colors.red },
+    { label: 'Planos', value: planos.length, icon: 'bed-outline', color: Colors.teal },
     { label: 'Receita', value: `R$${receitaTotal.toFixed(0)}`, icon: 'cash', color: Colors.orange },
   ] as const;
 
@@ -61,7 +96,7 @@ export default function Admin() {
 
         {/* Tabs */}
         <View style={styles.tabs}>
-          {(['usuarios', 'pets', 'reservas'] as Tab[]).map(t => (
+          {(['usuarios', 'pets', 'reservas', 'planos'] as Tab[]).map(t => (
             <TouchableOpacity
               key={t}
               style={[styles.tab, tab === t && styles.tabActive]}
@@ -153,7 +188,6 @@ export default function Admin() {
         {/* Reservas */}
         {tab === 'reservas' && (
           <View style={styles.reservasSection}>
-            {/* Summary */}
             <View style={styles.summaryRow}>
               <View style={[styles.summaryCard, { borderColor: Colors.green }]}>
                 <Text style={[styles.summaryNum, { color: Colors.green }]}>{reservasAtivas.length}</Text>
@@ -192,11 +226,15 @@ export default function Admin() {
                           {r.status}
                         </Badge>
                       </View>
+                      <View style={styles.tutorRow}>
+                        <Ionicons name="person-circle-outline" size={13} color={Colors.teal} />
+                        <Text style={styles.tutorText}>{getUsuarioNome(r.usuarioId)}</Text>
+                      </View>
                       <Text style={styles.rowSub}>
                         {fmt(r.dataEntrada)} → {fmt(r.dataSaidaPrevista)}
                       </Text>
                       <Text style={styles.rowSub}>
-                        {r.tipoAcomodacao} · R$ {r.valorTotal.toFixed(2)} · {getUsuarioNome(r.usuarioId)}
+                        {r.tipoAcomodacao} · R$ {r.valorTotal.toFixed(2)}
                       </Text>
                     </View>
                     <TouchableOpacity
@@ -210,6 +248,106 @@ export default function Admin() {
                     >
                       <Ionicons name="close-circle" size={22} color={Colors.red} />
                     </TouchableOpacity>
+                  </View>
+                ))}
+              </CardContent>
+            </Card>
+          </View>
+        )}
+        {/* Planos */}
+        {tab === 'planos' && (
+          <View style={styles.reservasSection}>
+
+            {/* Vagas totais */}
+            <Card>
+              <CardHeader><CardTitle>Capacidade do Hotel</CardTitle></CardHeader>
+              <CardContent>
+                <Text style={styles.rowSub}>Total de vagas simultâneas disponíveis</Text>
+                <View style={styles.vagasRow}>
+                  <TextInput
+                    style={styles.vagasInput}
+                    value={vagasInput}
+                    onChangeText={setVagasInput}
+                    keyboardType="number-pad"
+                  />
+                  <TouchableOpacity style={styles.vagasBtn} onPress={salvarVagas}>
+                    <Ionicons name="checkmark" size={20} color={Colors.white} />
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.vagasAtual}>Atual: {vagasTotais} vagas</Text>
+              </CardContent>
+            </Card>
+
+            {/* Lista de planos */}
+            <Card>
+              <CardHeader>
+                <View style={styles.planosTitleRow}>
+                  <CardTitle>Planos de Hospedagem</CardTitle>
+                  <TouchableOpacity onPress={() => setNovoPlanoAberto(v => !v)} style={styles.addBtn}>
+                    <Ionicons name={novoPlanoAberto ? 'close' : 'add'} size={20} color={Colors.white} />
+                  </TouchableOpacity>
+                </View>
+              </CardHeader>
+
+              {/* Formulário novo plano */}
+              {novoPlanoAberto && (
+                <CardContent style={styles.novoPlanoForm}>
+                  <Text style={styles.novoPlanoTitle}>Novo Plano</Text>
+                  <Input label="Nome *" value={novoNome} onChangeText={setNovoNome} placeholder="Ex: Executivo" />
+                  <Input label="Descrição" value={novoDesc} onChangeText={setNovoDesc} placeholder="Breve descrição" />
+                  <Input label="Preço por diária (R$) *" value={novoPreco} onChangeText={setNovoPreco} keyboardType="decimal-pad" placeholder="0.00" />
+                  <Button fullWidth onPress={salvarNovoPlano} style={{ marginTop: Spacing[2] }}>Adicionar Plano</Button>
+                </CardContent>
+              )}
+
+              <CardContent>
+                {planos.length === 0 ? (
+                  <Text style={styles.empty}>Nenhum plano cadastrado.</Text>
+                ) : planos.map(p => (
+                  <View key={p.id}>
+                    {editandoPlano === p.id ? (
+                      <View style={styles.editForm}>
+                        <Input label="Nome *" value={editNome} onChangeText={setEditNome} placeholder="Nome do plano" />
+                        <Input label="Descrição" value={editDesc} onChangeText={setEditDesc} placeholder="Descrição" />
+                        <Input label="Preço/diária (R$) *" value={editPreco} onChangeText={setEditPreco} keyboardType="decimal-pad" placeholder="0.00" />
+                        <View style={styles.editBtns}>
+                          <TouchableOpacity style={styles.cancelEditBtn} onPress={() => setEditandoPlano(null)}>
+                            <Text style={styles.cancelEditText}>Cancelar</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity style={styles.saveBtn} onPress={salvarEdicao}>
+                            <Text style={styles.saveBtnText}>Salvar</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ) : (
+                      <View style={styles.row}>
+                        <View style={styles.rowIcon}>
+                          <Ionicons name="bed-outline" size={18} color={Colors.teal} />
+                        </View>
+                        <View style={styles.rowContent}>
+                          <View style={styles.rowHeader}>
+                            <Text style={styles.rowTitle}>{p.nome}</Text>
+                            <Text style={styles.planoPreco}>R$ {p.preco.toFixed(2)}/dia</Text>
+                          </View>
+                          <Text style={styles.rowSub}>{p.descricao}</Text>
+                        </View>
+                        <View style={styles.planoAcoes}>
+                          <TouchableOpacity onPress={() => abrirEdicao(p)}>
+                            <Ionicons name="create-outline" size={20} color={Colors.teal} />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() =>
+                              Alert.alert('Remover plano', `Deseja remover o plano "${p.nome}"?`, [
+                                { text: 'Cancelar', style: 'cancel' },
+                                { text: 'Remover', style: 'destructive', onPress: () => removerPlano(p.id) },
+                              ])
+                            }
+                          >
+                            <Ionicons name="close-circle" size={20} color={Colors.red} />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    )}
                   </View>
                 ))}
               </CardContent>
@@ -255,6 +393,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing[3],
     borderBottomWidth: 1,
     borderBottomColor: Colors.gray[50],
+    alignItems: 'center',
   },
   rowIcon: {
     width: 36,
@@ -264,12 +403,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-    marginTop: 2,
   },
   rowContent: { flex: 1 },
   rowHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   rowTitle: { fontSize: FontSizes.base, fontWeight: '600', color: Colors.gray[900], flex: 1, marginRight: 8 },
   rowSub: { fontSize: FontSizes.xs, color: Colors.gray[500], marginTop: 1 },
+
+  tutorRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 3 },
+  tutorText: { fontSize: FontSizes.xs, fontWeight: '700', color: Colors.teal },
 
   empty: { fontSize: FontSizes.sm, color: Colors.gray[400], textAlign: 'center', paddingVertical: Spacing[4] },
   deleteBtn: { justifyContent: 'center', paddingLeft: Spacing[2] },
@@ -291,4 +432,25 @@ const styles = StyleSheet.create({
   },
   summaryNum: { fontSize: FontSizes['2xl'], fontWeight: '800' },
   summaryLabel: { fontSize: FontSizes.xs, color: Colors.gray[500], marginTop: 2 },
+
+  // planos
+  planosTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  addBtn: { backgroundColor: Colors.teal, borderRadius: BorderRadius.full, width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
+  planoPreco: { fontSize: FontSizes.sm, fontWeight: '800', color: Colors.teal },
+  planoAcoes: { flexDirection: 'column', gap: Spacing[2], justifyContent: 'center', paddingLeft: Spacing[2] },
+
+  novoPlanoForm: { backgroundColor: '#F0FDFA', borderRadius: BorderRadius.lg, margin: Spacing[2] },
+  novoPlanoTitle: { fontSize: FontSizes.base, fontWeight: '700', color: Colors.teal, marginBottom: Spacing[3] },
+
+  editForm: { paddingVertical: Spacing[3], borderBottomWidth: 1, borderBottomColor: Colors.gray[100] },
+  editBtns: { flexDirection: 'row', gap: 10, marginTop: Spacing[2] },
+  cancelEditBtn: { flex: 1, paddingVertical: Spacing[2], alignItems: 'center', borderRadius: BorderRadius.md, borderWidth: 1, borderColor: Colors.gray[300] },
+  cancelEditText: { fontSize: FontSizes.sm, color: Colors.gray[600], fontWeight: '600' },
+  saveBtn: { flex: 1, paddingVertical: Spacing[2], alignItems: 'center', borderRadius: BorderRadius.md, backgroundColor: Colors.teal },
+  saveBtnText: { fontSize: FontSizes.sm, color: Colors.white, fontWeight: '700' },
+
+  vagasRow: { flexDirection: 'row', gap: 10, alignItems: 'center', marginTop: Spacing[3] },
+  vagasInput: { flex: 1, borderWidth: 1.5, borderColor: Colors.gray[200], borderRadius: BorderRadius.md, padding: Spacing[3], fontSize: FontSizes.lg, fontWeight: '700', color: Colors.gray[900], backgroundColor: Colors.white },
+  vagasBtn: { backgroundColor: Colors.teal, borderRadius: BorderRadius.md, padding: Spacing[3] },
+  vagasAtual: { fontSize: FontSizes.xs, color: Colors.gray[400], marginTop: Spacing[2] },
 });
