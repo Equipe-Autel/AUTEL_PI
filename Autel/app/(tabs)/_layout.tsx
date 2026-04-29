@@ -64,6 +64,16 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
+        name="admin"
+        options={{
+          title: 'Admin',
+          href: usuarioLogado?.isAdmin ? undefined : null,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="shield-checkmark" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="index"
         options={{
           title: 'Início',
@@ -129,16 +139,6 @@ export default function TabsLayout() {
           href: usuarioLogado?.isAdmin ? undefined : null,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="add-circle" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="admin"
-        options={{
-          title: 'Admin',
-          href: usuarioLogado?.isAdmin ? undefined : null,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="shield-checkmark" size={size} color={color} />
           ),
         }}
       />
