@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model endereco {
+  id          Int       @id @default(autoincrement())
+  logradouro  String
+  bairro      String
+  cidade      String
+  estado      String
+  numero      String?
+  complemento String?
+  usuario     usuario[]
+}
+
+model funcionario {
+  id              Int       @id @default(autoincrement())
+  cod_funcionario String
+  senha           String
+  nome            String
+  cargo           String
+  reserva         reserva[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model pet {
+  id                     BigInt    @id @default(autoincrement())
+  nome                   String
+  especie                String
+  raca                   String
+  data_nascimento        DateTime  @db.Date
+  peso                   Decimal   @db.Decimal(5, 2)
+  porte                  String    @db.Char(1)
+  sexo                   String    @db.Char(1)
+  naturalidade           String
+  comportamento          String
+  brincadeiras_favoritas String?
+  obs_saude              String
+  castrado               String    @db.Char(1)
+  usuario_id             BigInt
+  usuario                usuario   @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario")
+  reserva                reserva[]
+}
+
+model plano {
+  id           Int       @id @default(autoincrement())
+  nome         String
+  valor_diaria Decimal   @db.Decimal(5, 2)
+  descricao    String
+  reserva      reserva[]
+}
+
+model reserva {
+  id                   BigInt       @id @default(autoincrement())
+  cod_reserva          String       @unique
+  data_reserva         DateTime     @default(now()) @db.Timestamp(6)
+  checkin              DateTime     @db.Timestamp(6)
+  checkout             DateTime     @db.Timestamp(6)
+  data_horario_entrada DateTime?    @db.Time(6)
+  data_horario_saida   DateTime?    @db.Time(6)
+  status_reserva       String
+  status_pagamento     String
+  observacoes          String?
+  alimentacao          String
+  plano_id             Int
+  usuario_id           BigInt
+  pet_id               BigInt
+  funcionario_id       Int?
+  funcionario          funcionario? @relation(fields: [funcionario_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_funcionario")
+  pet                  pet          @relation(fields: [pet_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pet")
+  plano                plano        @relation(fields: [plano_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_plano")
+  usuario              usuario      @relation(fields: [usuario_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_usuario")
+}
+
+model usuario {
+  id                  BigInt    @id @default(autoincrement())
+  nome                String
+  sobrenome           String
+  cpf                 String    @unique @db.Char(11)
+  telefone            String    @db.Char(11)
+  email               String    @unique
+  senha               String
+  contato_emergencia  String?
+  telefone_emergencia String?   @db.VarChar(11)
+  endereco_id         Int
+  pet                 pet[]
+  reserva             reserva[]
+  endereco            endereco  @relation(fields: [endereco_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_endereco")
+}
