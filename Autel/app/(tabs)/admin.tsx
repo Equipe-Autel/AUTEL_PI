@@ -67,7 +67,10 @@ export default function AdminTab() {
     .reduce((s, r) => s + r.valorTotal, 0);
 
   const getPetNome = (id: string) => pets.find(p => p.id === id)?.nome ?? '—';
-  const getUsuarioNome = (id: string) => usuarios.find(u => u.id === id)?.nome ?? '—';
+  const getUsuarioNome = (id: string) => {
+    const u = usuarios.find(u => u.id === id);
+    return u ? `${u.nome} ${u.sobrenome}` : '—';
+  };
 
   const STATS = [
     { label: 'Usuários', value: usuarios.length, icon: 'people', color: Colors.blue },
@@ -121,7 +124,7 @@ export default function AdminTab() {
                   </View>
                   <View style={styles.rowContent}>
                     <View style={styles.rowHeader}>
-                      <Text style={styles.rowTitle}>{u.nome}</Text>
+                      <Text style={styles.rowTitle}>{u.nome} {u.sobrenome}</Text>
                       <Badge variant={u.isAdmin ? 'default' : 'secondary'}>
                         {u.isAdmin ? 'Admin' : 'Cliente'}
                       </Badge>
@@ -133,7 +136,7 @@ export default function AdminTab() {
                     <TouchableOpacity
                       style={styles.deleteBtn}
                       onPress={() =>
-                        Alert.alert('Remover usuário', `Deseja remover ${u.nome}?`, [
+                        Alert.alert('Remover usuário', `Deseja remover ${u.nome} ${u.sobrenome}?`, [
                           { text: 'Cancelar', style: 'cancel' },
                           { text: 'Remover', style: 'destructive', onPress: () => removerUsuario(u.id) },
                         ])

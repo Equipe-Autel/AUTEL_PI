@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ScrollView,
   View,
@@ -91,10 +91,13 @@ export default function Home() {
   const { usuarioLogado } = useApp();
   const [planoSelecionado, setPlanoSelecionado] = useState<Plano | null>(null);
 
-  if (usuarioLogado?.isAdmin) {
-    router.replace('/(tabs)/admin');
-    return null;
-  }
+  useEffect(() => {
+    if (usuarioLogado?.isAdmin) {
+      router.replace('/(tabs)/admin');
+    }
+  }, [usuarioLogado]);
+
+  if (usuarioLogado?.isAdmin) return null;
 
   return (
     <>

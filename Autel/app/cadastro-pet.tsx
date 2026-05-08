@@ -56,7 +56,7 @@ export default function CadastroPet() {
   const isAdmin = usuarioLogado.isAdmin;
   const clientesOptions = usuarios
     .filter(u => !u.isAdmin)
-    .map(u => ({ label: `${u.nome} — ${u.email}`, value: u.id }));
+    .map(u => ({ label: `${u.nome} ${u.sobrenome} — ${u.email}`, value: u.id }));
 
   const handleSubmit = () => {
     if (isAdmin && !clienteId) {

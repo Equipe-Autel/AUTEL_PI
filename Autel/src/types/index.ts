@@ -1,11 +1,18 @@
 export interface Usuario {
   id: string;
   nome: string;
+  sobrenome: string;
   cpf: string;
-  rg: string;
   telefone: string;
   email: string;
-  endereco: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  contatoEmergencia: string;
+  telefoneEmergencia: string;
   isAdmin?: boolean;
 }
 

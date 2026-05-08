@@ -72,7 +72,10 @@ export default function MinhasReservas() {
 
   const getPet = (petId: string) => pets.find(p => p.id === petId);
   const getPetNome = (petId: string) => getPet(petId)?.nome ?? 'Pet';
-  const getTutorNome = (usuarioId: string) => usuarios.find(u => u.id === usuarioId)?.nome ?? '—';
+  const getTutorNome = (usuarioId: string) => {
+    const u = usuarios.find(u => u.id === usuarioId);
+    return u ? `${u.nome} ${u.sobrenome}` : '—';
+  };
 
   // calculo de multa
   const diasRestantes = (dataEntrada: string) =>

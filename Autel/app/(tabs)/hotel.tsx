@@ -64,7 +64,7 @@ export default function Hotel() {
   const petOptions = meusPets.map(p => {
     if (isAdmin) {
       const tutor = usuarios.find(u => u.id === p.usuarioId);
-      return { label: `🐾 ${p.nome} (${p.raca}) — ${tutor?.nome ?? '?'}`, value: p.id };
+      return { label: `🐾 ${p.nome} (${p.raca}) — ${tutor ? `${tutor.nome} ${tutor.sobrenome}` : '?'}`, value: p.id };
     }
     return { label: `🐾 ${p.nome} (${p.raca})`, value: p.id };
   });
