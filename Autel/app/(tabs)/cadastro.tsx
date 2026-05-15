@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { ScrollView, View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../src/components/ui/Card';
-import { Button } from '../src/components/ui/Button';
-import { Input } from '../src/components/ui/Input';
-import { useApp } from '../src/context/AppContext';
-import { useToast } from '../src/components/ui/Toast';
-import { Colors, FontSizes, Spacing, BorderRadius } from '../src/constants/theme';
+import { Card, CardHeader, CardTitle, CardContent } from '../../src/components/ui/Card';
+import { Button } from '../../src/components/ui/Button';
+import { Input } from '../../src/components/ui/Input';
+import { useApp } from '../../src/context/AppContext';
+import { useToast } from '../../src/components/ui/Toast';
+import { Colors, FontSizes, Spacing, BorderRadius } from '../../src/constants/theme';
 
 const maskCPF = (v: string) => {
   const d = v.replace(/\D/g, '').slice(0, 11);
@@ -24,38 +23,35 @@ const maskPhone = (v: string) => {
     .replace(/(\d{5})(\d)/, '$1-$2');
 };
 
-const ESTADOS_BR = [
-  'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG',
-  'PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO',
-];
+const FORM_INITIAL = {
+  nome: '',
+  sobrenome: '',
+  cpf: '',
+  telefone: '',
+  email: '',
+  logradouro: '',
+  numero: '',
+  complemento: '',
+  bairro: '',
+  cidade: '',
+  estado: '',
+  contatoEmergencia: '',
+  telefoneEmergencia: '',
+};
 
-export default function CadastroUsuario() {
-  const [form, setForm] = useState({
-    nome: '',
-    sobrenome: '',
-    cpf: '',
-    telefone: '',
-    email: '',
-    logradouro: '',
-    numero: '',
-    complemento: '',
-    bairro: '',
-    cidade: '',
-    estado: '',
-    contatoEmergencia: '',
-    telefoneEmergencia: '',
-  });
-
-  const { adicionarUsuario, login } = useApp();
+export default function Cadastro() {
+  const { usuarioLogado, adicionarUsuario } = useApp();
   const { toast } = useToast();
-  const router = useRouter();
+  const [form, setForm] = useState(FORM_INITIAL);
 
-  const set = (key: keyof typeof form) => (val: string) =>
+  const set = (key: keyof typeof FORM_INITIAL) => (val: string) =>
     setForm(prev => ({ ...prev, [key]: val }));
 
   const setCPF = (val: string) => setForm(prev => ({ ...prev, cpf: maskCPF(val) }));
   const setPhone = (val: string) => setForm(prev => ({ ...prev, telefone: maskPhone(val) }));
   const setPhoneEmerg = (val: string) => setForm(prev => ({ ...prev, telefoneEmergencia: maskPhone(val) }));
+
+  if (!usuarioLogado?.isAdmin) return null;
 
   const handleSubmit = () => {
     const required = [
@@ -67,10 +63,9 @@ export default function CadastroUsuario() {
       return;
     }
 
-    const novo = adicionarUsuario({ ...form, isAdmin: false });
-    login(novo.email);
-    toast.success('Cadastro realizado com sucesso!');
-    router.push('/cadastro-pet');
+    adicionarUsuario({ ...form, isAdmin: false });
+    toast.success(`Cliente ${form.nome} ${form.sobrenome} cadastrado com sucesso!`);
+    setForm(FORM_INITIAL);
   };
 
   return (
@@ -81,18 +76,17 @@ export default function CadastroUsuario() {
             <View style={styles.iconWrap}>
               <Ionicons name="person-add-outline" size={32} color={Colors.teal} />
             </View>
-            <CardTitle style={styles.title}>Cadastro de Usuário</CardTitle>
-            <CardDescription style={styles.desc}>
-              Preencha seus dados para criar sua conta no Autel
-            </CardDescription>
+            <CardTitle style={styles.title}>Cadastrar Cliente</CardTitle>
+            <Text style={styles.subtitle}>Preencha os dados para criar a conta do cliente</Text>
           </CardHeader>
+
           <CardContent>
             <View style={styles.row}>
               <Input
                 label="Nome *"
                 value={form.nome}
                 onChangeText={set('nome')}
-                placeholder="Seu nome"
+                placeholder="Nome do cliente"
                 autoCapitalize="words"
                 containerStyle={styles.half}
               />
@@ -100,7 +94,7 @@ export default function CadastroUsuario() {
                 label="Sobrenome *"
                 value={form.sobrenome}
                 onChangeText={set('sobrenome')}
-                placeholder="Seu sobrenome"
+                placeholder="Sobrenome"
                 autoCapitalize="words"
                 containerStyle={styles.half}
               />
@@ -129,7 +123,7 @@ export default function CadastroUsuario() {
               label="E-mail *"
               value={form.email}
               onChangeText={set('email')}
-              placeholder="seu@email.com"
+              placeholder="cliente@email.com"
               keyboardType="email-address"
               autoCapitalize="none"
             />
@@ -167,7 +161,7 @@ export default function CadastroUsuario() {
               label="Bairro *"
               value={form.bairro}
               onChangeText={set('bairro')}
-              placeholder="Seu bairro"
+              placeholder="Bairro"
               autoCapitalize="words"
             />
 
@@ -176,7 +170,7 @@ export default function CadastroUsuario() {
                 label="Cidade *"
                 value={form.cidade}
                 onChangeText={set('cidade')}
-                placeholder="Sua cidade"
+                placeholder="Cidade"
                 autoCapitalize="words"
                 containerStyle={styles.twoThirds}
               />
@@ -212,22 +206,23 @@ export default function CadastroUsuario() {
             </View>
 
             <Button fullWidth onPress={handleSubmit} style={styles.submitBtn}>
-              Cadastrar
+              Cadastrar Cliente
             </Button>
 
-            <TouchableOpacity onPress={() => router.push('/login')} style={styles.loginLink}>
-              <Text style={styles.loginLinkText}>Já tenho conta — Fazer login</Text>
-            </TouchableOpacity>
+            <Button variant="outline" fullWidth onPress={() => setForm(FORM_INITIAL)}>
+              Limpar Formulário
+            </Button>
           </CardContent>
         </Card>
       </View>
+      <View style={{ height: Spacing[8] }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.beige },
-  content: { padding: Spacing[4], paddingBottom: Spacing[8] },
+  content: { padding: Spacing[4] },
   header: { alignItems: 'center' },
   iconWrap: {
     width: 72,
@@ -239,7 +234,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing[3],
   },
   title: { textAlign: 'center' },
-  desc: { textAlign: 'center' },
+  subtitle: { fontSize: FontSizes.sm, color: Colors.gray[500], textAlign: 'center', marginTop: 4 },
   sectionLabel: {
     fontSize: FontSizes.sm,
     fontWeight: '700',
@@ -254,6 +249,4 @@ const styles = StyleSheet.create({
   third: { flex: 1 },
   twoThirds: { flex: 2 },
   submitBtn: { marginTop: Spacing[2], marginBottom: Spacing[3] },
-  loginLink: { alignItems: 'center' },
-  loginLinkText: { fontSize: FontSizes.sm, color: Colors.teal, fontWeight: '600' },
 });

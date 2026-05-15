@@ -33,12 +33,7 @@ function HeaderRight() {
 
   return (
     <View style={styles.headerRight}>
-      {usuarioLogado.isAdmin && (
-        <TouchableOpacity onPress={() => router.push('/admin')} style={styles.adminBtn}>
-          <Ionicons name="shield-checkmark" size={18} color={Colors.teal} />
-        </TouchableOpacity>
-      )}
-      <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
+      <TouchableOpacity onPress={() => { router.replace('/'); logout(); }} style={styles.logoutBtn}>
         <Ionicons name="log-out-outline" size={18} color={Colors.teal} />
       </TouchableOpacity>
     </View>
@@ -69,9 +64,20 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
+        name="admin"
+        options={{
+          title: 'Admin',
+          href: usuarioLogado?.isAdmin ? undefined : null,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="shield-checkmark" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="index"
         options={{
           title: 'Início',
+          href: usuarioLogado?.isAdmin ? null : undefined,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),
@@ -120,9 +126,19 @@ export default function TabsLayout() {
         name="meus-pets"
         options={{
           title: 'Meus Pets',
-          href: usuarioLogado ? undefined : null,
+          href: usuarioLogado && !usuarioLogado.isAdmin ? undefined : null,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="paw" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="cadastro"
+        options={{
+          title: 'Cadastro',
+          href: usuarioLogado?.isAdmin ? undefined : null,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add-circle" size={size} color={color} />
           ),
         }}
       />

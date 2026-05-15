@@ -1,11 +1,18 @@
 export interface Usuario {
   id: string;
   nome: string;
+  sobrenome: string;
   cpf: string;
-  rg: string;
   telefone: string;
   email: string;
-  endereco: string;
+  logradouro: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  contatoEmergencia: string;
+  telefoneEmergencia: string;
   isAdmin?: boolean;
 }
 
@@ -34,9 +41,16 @@ export interface Reserva {
   dataSaidaPrevista: string;
   dataSaida?: string;
   responsavelAlimentacao: 'Tutor' | 'Hotel';
-  tipoAcomodacao: 'Standard' | 'Premium' | 'Luxo';
+  tipoAcomodacao: string;
   observacoesComida: string;
   status: 'Ativa' | 'Cancelada' | 'Finalizada';
   valorTotal: number;
   dataCadastro: string;
+}
+
+export interface Plano {
+  id: string;
+  nome: string;
+  descricao: string;
+  preco: number;
 }

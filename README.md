@@ -255,10 +255,10 @@ Autel/
 
 | Nome | Matrícula |
 |------|--------|
-| Ian Melo | ... |
-| Caroline Lopes | ... |
+| Ian Melo | 2412130071 |
+| Caroline Lopes | 2412130073 |
 | Amanda Dahm | 2422130022 |
-| Antônio Vieira | ... |
+| Antônio Vieira | 2412130098 |
 
 
 ---
