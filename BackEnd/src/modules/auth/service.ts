@@ -1,20 +1,21 @@
 import { prisma } from '../../lib/prisma'
 import bcrypt from 'bcrypt'
 import { jwtEncode } from '../../shared/jwtService';
+import { ValidationError } from '../../shared/errors/AppError';
 
 export async function userLogin(email: string, senha:string){
 
-        if (!email || !senha) throw new Error('Email e senha são obrigatórios');
+        if (!email || !senha) throw new ValidationError('Email e senha são obrigatórios');
 
         const usuario = await prisma.user.findUnique({
             where: { email },
         });
 
-        if (!usuario) { throw new Error ('Usuário ou senha incorretos') };
+        if (!usuario) { throw new ValidationError ('Usuário ou senha incorretos') };
 
         const match = await bcrypt.compare(senha, usuario.hashedPassword);
 
-        if (!match) throw new Error ('Usuário ou senha incorretos');
+        if (!match) throw new ValidationError ('Usuário ou senha incorretos');
 
         const { token, id, role } = jwtEncode(
             {id: usuario.id, role: usuario.role ?? 'USUARIO'},
@@ -27,17 +28,17 @@ export async function userLogin(email: string, senha:string){
 
 export async function adminLogin(codFunc: string, senha:string){
 
-        if (!codFunc || !senha) throw new Error('Código do funcionário e senha são obrigatórios');
+        if (!codFunc || !senha) throw new ValidationError('Código do funcionário e senha são obrigatórios');
 
         const admin = await prisma.funcionario.findUnique({
             where: { codFunc },
         });
 
-        if (!admin) { throw new Error ('Código do funcionário ou senha incorretos') };
+        if (!admin) { throw new ValidationError ('Código do funcionário ou senha incorretos') };
 
         const match = await bcrypt.compare(senha, admin.hashedPassword);
 
-        if (!match) throw new Error ('Código do funcionário ou senha incorretos');
+        if (!match) throw new ValidationError ('Código do funcionário ou senha incorretos');
 
         const { token, id, role } = jwtEncode(
             {id: admin.id, role: admin.role ?? 'ADMIN'},

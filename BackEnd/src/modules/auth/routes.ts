@@ -12,7 +12,7 @@ app.post('/user/login', async (req: Request,res: Response) => {
         const resultLogin = await userLogin(email, senha)
         res.status(200).json(resultLogin)
     } catch (error) {
-        res.status(401).json({ error: error.message })
+        
     }
 
     //Recebe user e password do front ->
