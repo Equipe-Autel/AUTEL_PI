@@ -1,24 +1,28 @@
 import { Router, type Request, type Response } from 'express'
-import { userLogin } from "./service"
-import { resourceLimits } from 'node:worker_threads'
+import { adminLogin, userLogin } from './service'
+import { asyncHandler } from '../../shared/middlewares/asyncHandler'
 
-const express = require('express')
-const app = express()
+const router = Router()
 
-app.post('/user/login', async (req: Request,res: Response) => {
+// Rota para login de usuário
+router.post('/user/login', asyncHandler(async (req: Request, res: Response) => {
+  const { email, senha } = req.body
 
-    try {
-        const {email, senha} = req.body
-        const resultLogin = await userLogin(email, senha)
-        res.status(200).json(resultLogin)
-    } catch (error) {
-        
-    }
+  const resultLogin = await userLogin(email, senha)
 
-    //Recebe user e password do front ->
-    //Verifica se o login existe e se está correto -> 
-    //User e password passam pelo JWT para virarem tokens e seta algumas configurações do token ->
-    //Devolve o token para ir para o middleware ser autenticado
+  res.status(200).json(resultLogin)
+}))
 
-    
-})
+// Rota para login de administrador
+router.post(('/admin/login'), asyncHandler(async (req: Request, res: Response) => {
+    const { codFunc, senha } = req.body
+
+    const resultLogin = await adminLogin(codFunc, senha)
+
+    res.status(200).json(resultLogin)
+}))
+
+
+
+
+export default router
