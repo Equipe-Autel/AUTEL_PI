@@ -31,3 +31,4 @@ temp/
 Thumbs.db
 
 expo-env.d.ts
+/src/generated/prisma

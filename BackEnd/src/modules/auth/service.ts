@@ -1,4 +1,4 @@
-import { prisma } from '../../lib/prisma'
+import { prisma } from '../lib/prisma'
 import bcrypt from 'bcrypt'
 import { jwtEncode } from '../../shared/jwtService';
 import { ValidationError } from '../../shared/errors/AppError';
