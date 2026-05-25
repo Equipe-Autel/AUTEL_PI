@@ -1,9 +1,13 @@
-import express from 'express';
-import dotenv from 'dotenv';
+import express from 'express'
+import { errorHandler } from './shared/middlewares/erroHandler'
+import authRoutes from './modules/auth/routes'
 
-dotenv.config();
+const app = express()
 
-const app = express();
-app.use(express.json());
+app.use(express.json())
 
-app.listen(3000, () => console.log('Server running on port 3000'));
+app.use('/auth', authRoutes)
+
+app.use(errorHandler)
+
+export default app

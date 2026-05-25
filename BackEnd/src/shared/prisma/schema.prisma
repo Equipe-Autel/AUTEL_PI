@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../../generated/prisma"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -20,14 +21,13 @@ model endereco {
 
 model funcionario {
   id              Int       @id @default(autoincrement())
-  cod_funcionario String
+  cod_funcionario String    @unique
   senha           String
   nome            String
   cargo           String
   reserva         reserva[]
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model pet {
   id                     BigInt    @id @default(autoincrement())
   nome                   String

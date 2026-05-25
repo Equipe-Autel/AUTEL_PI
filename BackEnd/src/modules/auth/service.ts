@@ -1,51 +1,35 @@
-import { prisma } from '../lib/prisma'
+import { prisma } from '../../shared/prisma'
 import bcrypt from 'bcrypt'
 import { jwtEncode } from '../../shared/jwtService';
-import { ValidationError } from '../../shared/errors/AppError';
+import { UnauthorizedError, ValidationError } from '../../shared/errors/appError'
 
-export async function userLogin(email: string, senha:string){
+// Lógica de Login para User
+export async function userLogin(email: string, senha: string) {
+  if (!email || !senha) throw new ValidationError('Email e senha são obrigatórios')
 
-        if (!email || !senha) throw new ValidationError('Email e senha são obrigatórios');
+  const usuario = await prisma.usuario.findUnique({ where: { email } })
+  if (!usuario) throw new UnauthorizedError('Credenciais inválidas')
 
-        const usuario = await prisma.user.findUnique({
-            where: { email },
-        });
+  const match = await bcrypt.compare(senha, usuario.senha)
+  if (!match) throw new UnauthorizedError('Credenciais inválidas')
 
-        if (!usuario) { throw new ValidationError ('Usuário ou senha incorretos') };
+  const { token, id, role } = jwtEncode({ id: String(usuario.id), role: 'USUARIO' })
 
-        const match = await bcrypt.compare(senha, usuario.hashedPassword);
-
-        if (!match) throw new ValidationError ('Usuário ou senha incorretos');
-
-        const { token, id, role } = jwtEncode(
-            {id: usuario.id, role: usuario.role ?? 'USUARIO'},
-            process.env.JWT_SECRET!
-        );
-        
-        return { token, id, role, email: usuario.email }
-        
+  return { token, id, role, email: usuario.email }
 }
 
-export async function adminLogin(codFunc: string, senha:string){
+// Lógica de login para Admin
+export async function adminLogin(codFunc: string, senha: string) {
+  if (!codFunc || !senha) throw new ValidationError('Código do funcionário e senha são obrigatórios')
 
-        if (!codFunc || !senha) throw new ValidationError('Código do funcionário e senha são obrigatórios');
+  const admin = await prisma.funcionario.findUnique({ where: { cod_funcionario: codFunc } })
+  if (!admin) throw new UnauthorizedError('Credenciais inválidas')
 
-        const admin = await prisma.funcionario.findUnique({
-            where: { codFunc },
-        });
+  const match = await bcrypt.compare(senha, admin.senha)
+  if (!match) throw new UnauthorizedError('Credenciais inválidas')
 
-        if (!admin) { throw new ValidationError ('Código do funcionário ou senha incorretos') };
+  const { token, id, role } = jwtEncode({ id: String(admin.id), role: 'ADMIN' })
 
-        const match = await bcrypt.compare(senha, admin.hashedPassword);
-
-        if (!match) throw new ValidationError ('Código do funcionário ou senha incorretos');
-
-        const { token, id, role } = jwtEncode(
-            {id: admin.id, role: admin.role ?? 'ADMIN'},
-            process.env.JWT_SECRET!
-        );
-        
-        return { token, id, role, codFunc: admin.codFunc }
-        
+  return { token, id, role, codFunc: admin.cod_funcionario }
 }
 
