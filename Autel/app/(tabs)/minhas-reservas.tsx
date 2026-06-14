@@ -131,7 +131,7 @@ export default function MinhasReservas() {
         <Text style={styles.emptyTitle}>Nenhuma reserva por aqui</Text>
         <Text style={styles.emptyDesc}>Seu histórico de hospedagens aparecerá aqui assim que você fizer sua primeira reserva.</Text>
         <Button onPress={() => router.push('/hotel')} style={{ marginTop: Spacing[4] }}>
-          Explorar Hotéis
+          Fazer uma Reserva
         </Button>
       </View>
     );
