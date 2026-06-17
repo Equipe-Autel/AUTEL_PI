@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt'
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../shared/errors/appError'
 import * as userRepository from './user.repository'
-import { CreateUserDTO, UpdateUserDTO, UserResponse } from './user.types'
+import { CreateUserDTO, UpdateUserDTO, UserResponse, CreateAdminDTO, AdminResponse } from './user.types'
 
 function toResponse(user: Awaited<ReturnType<typeof userRepository.findById>>): UserResponse {
   return {
@@ -70,4 +70,27 @@ export async function deleteUser(id: string, requesterId: string, requesterRole:
   if (!exists) throw new NotFoundError('Usuário não encontrado')
 
   await userRepository.deleteUser(BigInt(id))
+}
+
+export async function createAdmin(dto: CreateAdminDTO, requesterRole: string): Promise<AdminResponse> {
+  if (requesterRole !== 'ADMIN') {
+    throw new ForbiddenError('Apenas administradores podem criar outros administradores')
+  }
+
+  if (!dto.cod_funcionario || !dto.senha || !dto.nome || !dto.cargo) {
+    throw new ValidationError('Campos obrigatórios não preenchidos')
+  }
+
+  const codExiste = await userRepository.findFuncionarioByCod(dto.cod_funcionario)
+  if (codExiste) throw new ConflictError('Código de funcionário já cadastrado')
+
+  const hashedSenha = await bcrypt.hash(dto.senha, 10)
+  const admin = await userRepository.createFuncionario(dto, hashedSenha)
+
+  return {
+    id: String(admin.id),
+    cod_funcionario: admin.cod_funcionario,
+    nome: admin.nome,
+    cargo: admin.cargo,
+  }
 }

@@ -6,11 +6,13 @@ import {
   deleteUserController,
   getUserController,
   updateUserController,
+  createAdminController,
 } from './user.controller'
 
 const router = Router()
 
 router.post('/', asyncHandler(createUserController))
+router.post('/admin', authenticate, asyncHandler(createAdminController))
 router.get('/:id', authenticate, asyncHandler(getUserController))
 router.put('/:id', authenticate, asyncHandler(updateUserController))
 router.delete('/:id', authenticate, asyncHandler(deleteUserController))

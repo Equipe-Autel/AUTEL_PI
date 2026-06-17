@@ -18,7 +18,7 @@ export default function RootLayout() {
           }}
         >
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="login" options={{ title: 'Entrar', presentation: 'modal' }} />
+          <Stack.Screen name="login" options={{ title: 'Entrar' }} />
           <Stack.Screen name="cadastro-usuario" options={{ title: 'Cadastro' }} />
           <Stack.Screen name="cadastro-pet" options={{ title: 'Cadastrar Pet' }} />
           <Stack.Screen name="admin" options={{ title: 'Painel Admin' }} />

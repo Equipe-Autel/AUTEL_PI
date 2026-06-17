@@ -33,7 +33,7 @@ interface AppContextData {
   atualizarPlano: (id: string, dados: Partial<Omit<Plano, 'id'>>) => void;
   removerPlano: (id: string) => void;
   atualizarVagasTotais: (vagas: number) => void;
-  login: (email: string) => Usuario | null;
+  login: (email: string, senha: string) => Usuario | null;
   logout: () => void;
   resetDados: () => Promise<void>;
 }
@@ -222,11 +222,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { sucesso: true, multa };
   };
 
-  const login = (email: string): Usuario | null => {
+  const login = (email: string, senha: string): Usuario | null => {
     const usuario = usuarios.find(u => u.email === email);
     if (usuario) {
-      setUsuarioLogado(usuario);
-      return usuario;
+      // Obtém a senha esperada (ou a padrão de fábrica se a conta na memória ainda não tiver senha)
+      const defaultUser = USUARIOS_PADRAO.find(u => u.email === email);
+      const expectedPassword = usuario.senha || (defaultUser ? defaultUser.senha : undefined);
+
+      if (expectedPassword === senha) {
+        // Se a conta de teste na memória não tinha senha ainda, migra salvando a senha padrão
+        if (!usuario.senha && defaultUser?.senha) {
+          usuario.senha = defaultUser.senha;
+          setUsuarios(prev => prev.map(u => u.id === usuario.id ? { ...u, senha: defaultUser.senha } : u));
+        }
+        setUsuarioLogado(usuario);
+        return usuario;
+      }
     }
     return null;
   };

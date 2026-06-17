@@ -52,3 +52,17 @@ export interface UserResponse {
     complemento: string | null
   }
 }
+
+export interface CreateAdminDTO {
+  cod_funcionario: string
+  senha: string
+  nome: string
+  cargo: string
+}
+
+export interface AdminResponse {
+  id: string
+  cod_funcionario: string
+  nome: string
+  cargo: string
+}

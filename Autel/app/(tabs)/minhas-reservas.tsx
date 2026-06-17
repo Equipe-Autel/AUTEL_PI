@@ -50,7 +50,7 @@ export default function MinhasReservas() {
   const [cancelModal, setCancelModal] = useState<Reserva | null>(null);
   const [editModal, setEditModal] = useState<Reserva | null>(null);
   const [editDataSaida, setEditDataSaida] = useState('');
-  const [editAcomodacao, setEditAcomodacao] = useState<'Standard' | 'Premium' | 'Luxo'>('Standard');
+  const [editAcomodacao, setEditAcomodacao] = useState<string>('Standard');
 
   // proteção de rota: Redireciona se o usuário deslogar
   useEffect(() => {

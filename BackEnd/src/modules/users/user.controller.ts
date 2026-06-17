@@ -23,3 +23,8 @@ export async function deleteUserController(req: Request, res: Response) {
   await userService.deleteUser(id, req.user!.id, req.user!.role)
   res.status(204).send()
 }
+
+export async function createAdminController(req: Request, res: Response) {
+  const admin = await userService.createAdmin(req.body, req.user!.role)
+  res.status(201).json(admin)
+}

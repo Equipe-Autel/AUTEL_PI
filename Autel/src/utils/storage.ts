@@ -63,6 +63,7 @@ export const USUARIOS_PADRAO: Usuario[] = [
     estado: 'SP',
     contatoEmergencia: '',
     telefoneEmergencia: '',
+    senha: 'admin',
     isAdmin: true,
   },
   {
@@ -80,6 +81,7 @@ export const USUARIOS_PADRAO: Usuario[] = [
     estado: 'SP',
     contatoEmergencia: 'Maria Silva',
     telefoneEmergencia: '(11) 97654-3210',
+    senha: '123456',
     isAdmin: false,
   },
 ];

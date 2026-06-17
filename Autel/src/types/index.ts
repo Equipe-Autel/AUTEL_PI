@@ -13,6 +13,7 @@ export interface Usuario {
   estado: string;
   contatoEmergencia: string;
   telefoneEmergencia: string;
+  senha?: string;
   isAdmin?: boolean;
 }
 

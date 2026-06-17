@@ -1,5 +1,5 @@
 import { prisma } from '../../shared/prisma'
-import { CreateUserDTO, UpdateUserDTO } from './user.types'
+import { CreateUserDTO, UpdateUserDTO, CreateAdminDTO } from './user.types'
 
 export async function findById(id: bigint) {
   return prisma.usuario.findUnique({
@@ -59,4 +59,19 @@ export async function updateUser(id: bigint, data: UpdateUserDTO) {
 
 export async function deleteUser(id: bigint) {
   return prisma.usuario.delete({ where: { id } })
+}
+
+export async function findFuncionarioByCod(codFunc: string) {
+  return prisma.funcionario.findUnique({ where: { cod_funcionario: codFunc } })
+}
+
+export async function createFuncionario(data: CreateAdminDTO, hashedSenha: string) {
+  return prisma.funcionario.create({
+    data: {
+      cod_funcionario: data.cod_funcionario,
+      senha: hashedSenha,
+      nome: data.nome,
+      cargo: data.cargo,
+    },
+  })
 }

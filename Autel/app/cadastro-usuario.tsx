@@ -36,6 +36,7 @@ export default function CadastroUsuario() {
     cpf: '',
     telefone: '',
     email: '',
+    senha: '',
     logradouro: '',
     numero: '',
     complemento: '',
@@ -60,15 +61,20 @@ export default function CadastroUsuario() {
   const handleSubmit = () => {
     const required = [
       form.nome, form.sobrenome, form.cpf, form.telefone, form.email,
-      form.logradouro, form.numero, form.bairro, form.cidade, form.estado,
+      form.senha, form.logradouro, form.numero, form.bairro, form.cidade, form.estado,
     ];
     if (required.some(f => !f)) {
       toast.error('Preencha todos os campos obrigatórios.');
       return;
     }
 
+    if (form.senha.length < 6) {
+      toast.error('A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+
     const novo = adicionarUsuario({ ...form, isAdmin: false });
-    login(novo.email);
+    login(novo.email, form.senha);
     toast.success('Cadastro realizado com sucesso!');
     router.push('/cadastro-pet');
   };
@@ -131,6 +137,15 @@ export default function CadastroUsuario() {
               onChangeText={set('email')}
               placeholder="seu@email.com"
               keyboardType="email-address"
+              autoCapitalize="none"
+            />
+
+            <Input
+              label="Senha *"
+              value={form.senha}
+              onChangeText={set('senha')}
+              placeholder="Mínimo de 6 caracteres"
+              secureTextEntry
               autoCapitalize="none"
             />
 
