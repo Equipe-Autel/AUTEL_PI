@@ -5,11 +5,6 @@ import { apiLogin, apiRegister, apiFetchProfile, apiDeleteUser, apiUpdateUser, a
 import { apiCreatePet, apiListMyPets, apiUpdatePet, apiDeletePet } from '../services/pets';
 import { apiListPlans, apiCreateReservation, apiListMyReservations, apiListAllReservations, apiCancelReservation, apiUpdateReservation, mapReservaFromBackend, apiCreatePlan, apiUpdatePlan, apiDeletePlan } from '../services/reservations';
 
-const PLANOS_PADRAO: Plano[] = [
-  { id: 'standard', nome: 'Standard', descricao: 'Simples e Confortável', preco: 80 },
-  { id: 'premium', nome: 'Premium', descricao: 'Espaço Ampliado', preco: 150 },
-  { id: 'luxo', nome: 'Luxo', descricao: 'Experiência VIP', preco: 250 },
-];
 const VAGAS_PADRAO = 20;
 
 interface AppContextData {
@@ -49,7 +44,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [pets, setPets] = useState<Pet[]>([]);
   const [reservas, setReservas] = useState<Reserva[]>([]);
-  const [planos, setPlanos] = useState<Plano[]>(PLANOS_PADRAO);
+  const [planos, setPlanos] = useState<Plano[]>([]);
   const [vagasTotais, setVagasTotais] = useState<number>(VAGAS_PADRAO);
   const [usuarioLogado, setUsuarioLogado] = useState<Usuario | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,10 +67,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       
       try {
         const backendPlans = await apiListPlans();
-        setPlanos(backendPlans.length > 0 ? backendPlans : PLANOS_PADRAO);
+        setPlanos(backendPlans);
       } catch (err) {
-        console.log('[AppContext] Erro ao buscar planos do backend, usando padrao:', err);
-        setPlanos(PLANOS_PADRAO);
+        console.log('[AppContext] Erro ao buscar planos do backend:', err);
+        setPlanos([]);
       }
       setVagasTotais(storedVagas ?? VAGAS_PADRAO);
       

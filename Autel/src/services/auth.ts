@@ -168,6 +168,26 @@ export async function apiUpdateUser(id: string, user: Partial<Usuario>, token: s
   return mapUserFromBackend(data);
 }
 
+export async function apiCreateAdmin(
+  dados: { cod_funcionario: string; nome: string; cargo: string; senha: string },
+  token: string
+): Promise<{ id: string; cod_funcionario: string; nome: string; cargo: string }> {
+  const response = await fetch(`${API_URL}/users/admin`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(dados),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error?.message || 'Erro ao criar administrador.');
+  }
+  return data;
+}
+
 export async function apiListAllUsers(token: string): Promise<Usuario[]> {
   const response = await fetch(`${API_URL}/users`, {
     method: 'GET',

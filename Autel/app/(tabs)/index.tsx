@@ -22,74 +22,13 @@ const FEATURES = [
   { icon: 'star', label: 'Excelência', desc: 'Primeira linha', color: Colors.orange, bg: Colors.orangeLight },
 ] as const;
 
-type Plano = {
-  nome: string;
-  preco: string;
-  descricao: string;
-  items: string[];
-  detalhes: string[];
-  cor: string;
-  icon: string;
-};
-
-const PLANOS: Plano[] = [
-  {
-    nome: 'Standard',
-    preco: 'R$ 80/dia',
-    descricao: 'Cuidado essencial com carinho e atenção para o seu pet.',
-    items: ['3 passeios diários', 'Alimentação balanceada'],
-    detalhes: [
-      '3 passeios diários de 20 min cada',
-      'Alimentação balanceada inclusa',
-      'Área coletiva de descanso',
-      'Monitoramento durante o dia',
-      'Atendimento veterinário de emergência',
-      'Relatório diário por mensagem',
-    ],
-    cor: Colors.teal,
-    icon: 'star-outline',
-  },
-  {
-    nome: 'Premium',
-    preco: 'R$ 150/dia',
-    descricao: 'Experiência superior com espaço exclusivo e mais atenção individual.',
-    items: ['Suíte individual + 5 passeios', 'Fotos diárias do pet'],
-    detalhes: [
-      'Suíte individual climatizada',
-      '5 passeios diários de 30 min cada',
-      'Alimentação premium personalizada',
-      'Fotos diárias enviadas ao tutor',
-      'Banho e tosa uma vez por semana',
-      'Monitoramento 24h por câmera',
-      'Atendimento veterinário incluído',
-    ],
-    cor: Colors.orange,
-    icon: 'star-half-outline',
-  },
-  {
-    nome: 'Luxo',
-    preco: 'R$ 250/dia',
-    descricao: 'O máximo em conforto e exclusividade para pets especiais.',
-    items: ['Suíte VIP + Spa inclusos', 'Vídeos ao vivo 24h'],
-    detalhes: [
-      'Suíte VIP com cama ortopédica',
-      'Passeios ilimitados com cuidador exclusivo',
-      'Cardápio gourmet personalizado',
-      'Sessão de spa e massagem diária',
-      'Vídeos ao vivo 24h para o tutor',
-      'Transporte de ida e volta incluso',
-      'Consulta veterinária semanal',
-      'Brinquedos e atividades interativas',
-    ],
-    cor: Colors.tealDark,
-    icon: 'star',
-  },
-];
+const PLANO_CORES = [Colors.teal, Colors.orange, Colors.tealDark];
+const PLANO_ICONS = ['star-outline', 'star-half-outline', 'star'];
 
 export default function Home() {
   const router = useRouter();
-  const { usuarioLogado } = useApp();
-  const [planoSelecionado, setPlanoSelecionado] = useState<Plano | null>(null);
+  const { usuarioLogado, planos } = useApp();
+  const [planoSelecionado, setPlanoSelecionado] = useState<typeof planos[0] | null>(null);
 
   useEffect(() => {
     if (usuarioLogado?.isAdmin) {
@@ -110,44 +49,40 @@ export default function Home() {
       >
         <Pressable style={styles.modalOverlay} onPress={() => setPlanoSelecionado(null)}>
           <Pressable style={styles.modalContainer} onPress={() => {}}>
-            {planoSelecionado && (
-              <>
-                <View style={[styles.modalHeader, { backgroundColor: planoSelecionado.cor }]}>
-                  <Ionicons name={planoSelecionado.icon as any} size={32} color={Colors.white} />
-                  <View style={{ flex: 1, marginLeft: Spacing[3] }}>
-                    <Text style={styles.modalNome}>{planoSelecionado.nome}</Text>
-                    <Text style={styles.modalPreco}>{planoSelecionado.preco}</Text>
-                  </View>
-                  <TouchableOpacity onPress={() => setPlanoSelecionado(null)}>
-                    <Ionicons name="close" size={24} color={Colors.white} />
-                  </TouchableOpacity>
-                </View>
-                <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-                  <Text style={styles.modalDesc}>{planoSelecionado.descricao}</Text>
-                  <Text style={[styles.modalSecTitle, { color: planoSelecionado.cor }]}>O que está incluído</Text>
-                  {planoSelecionado.detalhes.map((item) => (
-                    <View key={item} style={styles.modalItem}>
-                      <Ionicons name="checkmark-circle" size={18} color={planoSelecionado.cor} />
-                      <Text style={styles.modalItemText}>{item}</Text>
+            {planoSelecionado && (() => {
+              const idx = planos.findIndex(p => p.id === planoSelecionado.id);
+              const cor = PLANO_CORES[idx % PLANO_CORES.length];
+              const icon = PLANO_ICONS[idx % PLANO_ICONS.length];
+              return (
+                <>
+                  <View style={[styles.modalHeader, { backgroundColor: cor }]}>
+                    <Ionicons name={icon as any} size={32} color={Colors.white} />
+                    <View style={{ flex: 1, marginLeft: Spacing[3] }}>
+                      <Text style={styles.modalNome}>{planoSelecionado.nome}</Text>
+                      <Text style={styles.modalPreco}>R$ {planoSelecionado.preco.toFixed(2)}/dia</Text>
                     </View>
-                  ))}
-                  <Button
-                    size="lg"
-                    fullWidth
-                    onPress={() => {
-                      setPlanoSelecionado(null);
-                      setTimeout(() => {
-                        router.push('/hotel');
-                      }, 150);
-                    }}
-                    style={[styles.modalBtn, { backgroundColor: planoSelecionado.cor }]}
-                    textStyle={{ color: Colors.white }}
-                  >
-                    Reservar este Plano
-                  </Button>
-                </ScrollView>
-              </>
-            )}
+                    <TouchableOpacity onPress={() => setPlanoSelecionado(null)}>
+                      <Ionicons name="close" size={24} color={Colors.white} />
+                    </TouchableOpacity>
+                  </View>
+                  <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                    <Text style={styles.modalDesc}>{planoSelecionado.descricao}</Text>
+                    <Button
+                      size="lg"
+                      fullWidth
+                      onPress={() => {
+                        setPlanoSelecionado(null);
+                        setTimeout(() => router.push('/hotel'), 150);
+                      }}
+                      style={[styles.modalBtn, { backgroundColor: cor }]}
+                      textStyle={{ color: Colors.white }}
+                    >
+                      Reservar este Plano
+                    </Button>
+                  </ScrollView>
+                </>
+              );
+            })()}
           </Pressable>
         </Pressable>
       </Modal>
@@ -193,27 +128,30 @@ export default function Home() {
       <View style={[styles.section, { backgroundColor: Colors.white }]}>
         <Text style={styles.sectionTitle}>Nossos Planos</Text>
         <View style={styles.planos}>
-          {PLANOS.map((p) => (
-            <TouchableOpacity key={p.nome} onPress={() => setPlanoSelecionado(p)} activeOpacity={0.8}>
-              <Card style={[styles.planoCard, { borderLeftColor: p.cor }]}>
-                <CardContent style={styles.planoContent}>
-                  <View style={styles.planoHeader}>
-                    <View>
-                      <Text style={[styles.planoNome, { color: p.cor }]}>{p.nome}</Text>
-                      <Text style={styles.planoPreco}>{p.preco}</Text>
+          {planos.map((p, idx) => {
+            const cor = PLANO_CORES[idx % PLANO_CORES.length];
+            return (
+              <TouchableOpacity key={p.id} onPress={() => setPlanoSelecionado(p)} activeOpacity={0.8}>
+                <Card style={[styles.planoCard, { borderLeftColor: cor }]}>
+                  <CardContent style={styles.planoContent}>
+                    <View style={styles.planoHeader}>
+                      <View>
+                        <Text style={[styles.planoNome, { color: cor }]}>{p.nome}</Text>
+                        <Text style={styles.planoPreco}>R$ {p.preco.toFixed(2)}/dia</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={20} color={cor} />
                     </View>
-                    <Ionicons name="chevron-forward" size={20} color={p.cor} />
-                  </View>
-                  {p.items.map((item) => (
-                    <View key={item} style={styles.planoItem}>
-                      <View style={[styles.planoDot, { backgroundColor: p.cor }]} />
-                      <Text style={styles.planoItemText}>{item}</Text>
-                    </View>
-                  ))}
-                </CardContent>
-              </Card>
-            </TouchableOpacity>
-          ))}
+                    {p.descricao ? (
+                      <View style={styles.planoItem}>
+                        <View style={[styles.planoDot, { backgroundColor: cor }]} />
+                        <Text style={styles.planoItemText}>{p.descricao}</Text>
+                      </View>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
 
