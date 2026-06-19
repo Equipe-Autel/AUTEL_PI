@@ -6,7 +6,7 @@ import {
   ForbiddenError,
   ValidationError,
   BadRequestError,
-} from '../../shared/errors/appError'
+} from '../../shared/errors/AppError'
 
 function generateCodReserva(): string {
   const timestamp = Date.now().toString(36).toUpperCase()

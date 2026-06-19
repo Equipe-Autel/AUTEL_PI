@@ -1,0 +1,23 @@
+# Monorepo Root gitignore
+
+# Dependências
+node_modules/
+
+# IDEs
+.vscode/
+.idea/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Ignorar pastas geradas dentro dos subprojetos
+Autel/.expo/
+Autel/node_modules/
+Autel/web-build/
+BackEnd/node_modules/
+BackEnd/dist/
+BackEnd/build/
+BackEnd/src/generated/prisma/
+BackEnd/.env
+BackEnd/.env.local

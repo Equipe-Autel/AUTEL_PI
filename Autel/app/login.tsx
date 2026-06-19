@@ -18,13 +18,14 @@ export default function Login() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email.trim()) {
       toast.error('Digite seu e-mail.');
       return;
     }
+    const isCode = email.trim().toUpperCase().startsWith('ADM');
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
+    if (!isCode && !emailRegex.test(email.trim())) {
       toast.error('Digite um e-mail válido.');
       return;
     }
@@ -32,12 +33,16 @@ export default function Login() {
       toast.error('Digite sua senha.');
       return;
     }
-    const usuario = login(email.trim().toLowerCase(), senha);
-    if (usuario) {
-      toast.success(`Bem-vindo, ${usuario.nome}!`);
-      router.replace('/');
-    } else {
-      toast.error('Credenciais incorretas ou usuário não encontrado.');
+    try {
+      const usuario = await login(email.trim(), senha);
+      if (usuario) {
+        toast.success(`Bem-vindo, ${usuario.nome}!`);
+        router.replace('/');
+      } else {
+        toast.error('Credenciais incorretas ou usuário não encontrado.');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao realizar login.');
     }
   };
 
@@ -61,10 +66,10 @@ export default function Login() {
           </CardHeader>
           <CardContent>
             <Input
-              label="E-mail"
+              label="E-mail / Código"
               value={email}
               onChangeText={setEmail}
-              placeholder="seu@email.com"
+              placeholder="seu@email.com ou ADM001"
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
@@ -93,22 +98,22 @@ export default function Login() {
 
             {/* Usuários de teste */}
             <View style={styles.testSection}>
-              <Text style={styles.testTitle}>Usuários de teste:</Text>
+              <Text style={styles.testTitle}>Usuários de teste (Banco de Dados):</Text>
               <TouchableOpacity
                 style={[styles.testCard, { borderColor: Colors.orange }]}
-                onPress={() => { setEmail('admin@autel.com'); setSenha('admin'); }}
+                onPress={() => { setEmail('ADM001'); setSenha('senha_admin'); }}
                 activeOpacity={0.7}
               >
                 <Text style={[styles.testRole, { color: Colors.orange }]}>Administrador</Text>
-                <Text style={styles.testEmail}>admin@autel.com (senha: admin)</Text>
+                <Text style={styles.testEmail}>ADM001 (senha: senha_admin)</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.testCard, { borderColor: Colors.teal }]}
-                onPress={() => { setEmail('joao@email.com'); setSenha('123456'); }}
+                onPress={() => { setEmail('joaosilva@email.com'); setSenha('senha_segura_123'); }}
                 activeOpacity={0.7}
               >
                 <Text style={[styles.testRole, { color: Colors.teal }]}>Usuário Comum</Text>
-                <Text style={styles.testEmail}>joao@email.com (senha: 123456)</Text>
+                <Text style={styles.testEmail}>joaosilva@email.com (senha: senha_segura_123)</Text>
               </TouchableOpacity>
             </View>
           </CardContent>

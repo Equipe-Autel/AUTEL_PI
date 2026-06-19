@@ -1,5 +1,5 @@
 import bcrypt from 'bcrypt'
-import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../shared/errors/appError'
+import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../../shared/errors/AppError'
 import * as userRepository from './user.repository'
 import { CreateUserDTO, UpdateUserDTO, UserResponse, CreateAdminDTO, AdminResponse } from './user.types'
 
@@ -38,6 +38,14 @@ export async function createUser(dto: CreateUserDTO): Promise<UserResponse> {
   const user = await userRepository.createUser(dto, hashedSenha)
 
   return toResponse(user)
+}
+
+export async function getAllUsers(requesterRole: string): Promise<UserResponse[]> {
+  if (requesterRole !== 'ADMIN') {
+    throw new ForbiddenError('Apenas administradores podem listar todos os usuários')
+  }
+  const users = await userRepository.findAll()
+  return users.map(toResponse)
 }
 
 export async function getUserById(id: string, requesterId: string, requesterRole: string): Promise<UserResponse> {

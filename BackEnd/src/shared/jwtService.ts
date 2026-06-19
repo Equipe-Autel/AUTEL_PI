@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken'
-import { BadRequestError, UnauthorizedError } from './errors/appError'
+import { BadRequestError, UnauthorizedError } from './errors/AppError'
 
 const roles = ['USUARIO', 'ADMIN'] as const
 type RolesENUM = typeof roles[number]

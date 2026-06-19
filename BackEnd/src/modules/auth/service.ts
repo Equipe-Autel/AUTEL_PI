@@ -1,7 +1,7 @@
 import { prisma } from '../../shared/prisma'
 import bcrypt from 'bcrypt'
 import { jwtEncode } from '../../shared/jwtService';
-import { UnauthorizedError, ValidationError } from '../../shared/errors/appError'
+import { UnauthorizedError, ValidationError } from '../../shared/errors/AppError'
 
 // Lógica de Login para User
 export async function userLogin(email: string, senha: string) {

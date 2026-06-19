@@ -101,50 +101,57 @@ export default function Home() {
 
   return (
     <>
-    <Modal
-      visible={!!planoSelecionado}
-      transparent
-      animationType="slide"
-      onRequestClose={() => setPlanoSelecionado(null)}
-    >
-      <Pressable style={styles.modalOverlay} onPress={() => setPlanoSelecionado(null)}>
-        <Pressable style={styles.modalContainer} onPress={() => {}}>
-          {planoSelecionado && (
-            <>
-              <View style={[styles.modalHeader, { backgroundColor: planoSelecionado.cor }]}>
-                <Ionicons name={planoSelecionado.icon as any} size={32} color={Colors.white} />
-                <View style={{ flex: 1, marginLeft: Spacing[3] }}>
-                  <Text style={styles.modalNome}>{planoSelecionado.nome}</Text>
-                  <Text style={styles.modalPreco}>{planoSelecionado.preco}</Text>
-                </View>
-                <TouchableOpacity onPress={() => setPlanoSelecionado(null)}>
-                  <Ionicons name="close" size={24} color={Colors.white} />
-                </TouchableOpacity>
-              </View>
-              <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-                <Text style={styles.modalDesc}>{planoSelecionado.descricao}</Text>
-                <Text style={[styles.modalSecTitle, { color: planoSelecionado.cor }]}>O que está incluído</Text>
-                {planoSelecionado.detalhes.map((item) => (
-                  <View key={item} style={styles.modalItem}>
-                    <Ionicons name="checkmark-circle" size={18} color={planoSelecionado.cor} />
-                    <Text style={styles.modalItemText}>{item}</Text>
+    {!!planoSelecionado && (
+      <Modal
+        visible={!!planoSelecionado}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPlanoSelecionado(null)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setPlanoSelecionado(null)}>
+          <Pressable style={styles.modalContainer} onPress={() => {}}>
+            {planoSelecionado && (
+              <>
+                <View style={[styles.modalHeader, { backgroundColor: planoSelecionado.cor }]}>
+                  <Ionicons name={planoSelecionado.icon as any} size={32} color={Colors.white} />
+                  <View style={{ flex: 1, marginLeft: Spacing[3] }}>
+                    <Text style={styles.modalNome}>{planoSelecionado.nome}</Text>
+                    <Text style={styles.modalPreco}>{planoSelecionado.preco}</Text>
                   </View>
-                ))}
-                <Button
-                  size="lg"
-                  fullWidth
-                  onPress={() => { setPlanoSelecionado(null); router.push('/hotel'); }}
-                  style={[styles.modalBtn, { backgroundColor: planoSelecionado.cor }]}
-                  textStyle={{ color: Colors.white }}
-                >
-                  Reservar este Plano
-                </Button>
-              </ScrollView>
-            </>
-          )}
+                  <TouchableOpacity onPress={() => setPlanoSelecionado(null)}>
+                    <Ionicons name="close" size={24} color={Colors.white} />
+                  </TouchableOpacity>
+                </View>
+                <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+                  <Text style={styles.modalDesc}>{planoSelecionado.descricao}</Text>
+                  <Text style={[styles.modalSecTitle, { color: planoSelecionado.cor }]}>O que está incluído</Text>
+                  {planoSelecionado.detalhes.map((item) => (
+                    <View key={item} style={styles.modalItem}>
+                      <Ionicons name="checkmark-circle" size={18} color={planoSelecionado.cor} />
+                      <Text style={styles.modalItemText}>{item}</Text>
+                    </View>
+                  ))}
+                  <Button
+                    size="lg"
+                    fullWidth
+                    onPress={() => {
+                      setPlanoSelecionado(null);
+                      setTimeout(() => {
+                        router.push('/hotel');
+                      }, 150);
+                    }}
+                    style={[styles.modalBtn, { backgroundColor: planoSelecionado.cor }]}
+                    textStyle={{ color: Colors.white }}
+                  >
+                    Reservar este Plano
+                  </Button>
+                </ScrollView>
+              </>
+            )}
+          </Pressable>
         </Pressable>
-      </Pressable>
-    </Modal>
+      </Modal>
+    )}
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Hero */}
       <View style={styles.hero}>

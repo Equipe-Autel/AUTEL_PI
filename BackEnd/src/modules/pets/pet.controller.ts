@@ -11,7 +11,7 @@ export class PetController {
   create = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = (req as any).user.id 
-      const petData = { ...req.body, userId }
+      const petData = { ...req.body, usuario_id: userId }
       
       const pet = await this.petService.createPet(petData)
       return res.status(201).json(pet)
@@ -37,7 +37,10 @@ export class PetController {
   listMyPets = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const userId = (req as any).user.id
-      const pets = await this.petService.getPetsByUser(userId)
+      const role = (req as any).user.role
+      const pets = role === 'ADMIN'
+        ? await this.petService.getAllPets()
+        : await this.petService.getPetsByUser(userId)
       return res.status(200).json(pets)
     } catch (error) {
       next(error)

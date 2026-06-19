@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity, Alert, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, CardHeader, CardTitle, CardContent } from '../../src/components/ui/Card';
@@ -8,6 +8,7 @@ import { Input } from '../../src/components/ui/Input';
 import { useApp } from '../../src/context/AppContext';
 import { Colors, FontSizes, Spacing, BorderRadius } from '../../src/constants/theme';
 import { Plano } from '../../src/types';
+import { useToast } from '../../src/components/ui/Toast';
 
 type Tab = 'usuarios' | 'pets' | 'reservas' | 'planos';
 
@@ -17,6 +18,40 @@ const fmt = (iso: string) =>
 export default function AdminTab() {
   const { usuarioLogado, usuarios, pets, reservas, planos, vagasTotais, removerUsuario, removerPet, removerReserva, adicionarPlano, atualizarPlano, removerPlano, atualizarVagasTotais } = useApp();
   const [tab, setTab] = useState<Tab>('usuarios');
+  const { toast } = useToast();
+
+  const ITEMS_PER_PAGE = 5;
+
+  // Pagination states
+  const [pagUsuarios, setPagUsuarios] = useState(1);
+  const totalPagUsuarios = Math.max(1, Math.ceil(usuarios.length / ITEMS_PER_PAGE));
+  const usuariosExibidos = usuarios.slice((pagUsuarios - 1) * ITEMS_PER_PAGE, pagUsuarios * ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    if (pagUsuarios > totalPagUsuarios) {
+      setPagUsuarios(totalPagUsuarios);
+    }
+  }, [usuarios.length, totalPagUsuarios]);
+
+  const [pagPets, setPagPets] = useState(1);
+  const totalPagPets = Math.max(1, Math.ceil(pets.length / ITEMS_PER_PAGE));
+  const petsExibidos = pets.slice((pagPets - 1) * ITEMS_PER_PAGE, pagPets * ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    if (pagPets > totalPagPets) {
+      setPagPets(totalPagPets);
+    }
+  }, [pets.length, totalPagPets]);
+
+  const [pagReservas, setPagReservas] = useState(1);
+  const totalPagReservas = Math.max(1, Math.ceil(reservas.length / ITEMS_PER_PAGE));
+  const reservasExibidas = reservas.slice((pagReservas - 1) * ITEMS_PER_PAGE, pagReservas * ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    if (pagReservas > totalPagReservas) {
+      setPagReservas(totalPagReservas);
+    }
+  }, [reservas.length, totalPagReservas]);
 
   // estados da aba de planos
   const [editandoPlano, setEditandoPlano] = useState<string | null>(null);
@@ -36,20 +71,30 @@ export default function AdminTab() {
     setEditPreco(String(p.preco));
   };
 
-  const salvarEdicao = () => {
+  const salvarEdicao = async () => {
     if (!editandoPlano) return;
     const preco = parseFloat(editPreco);
     if (!editNome || isNaN(preco) || preco <= 0) return;
-    atualizarPlano(editandoPlano, { nome: editNome, descricao: editDesc, preco });
-    setEditandoPlano(null);
+    try {
+      await atualizarPlano(editandoPlano, { nome: editNome, descricao: editDesc, preco });
+      toast.success('Plano atualizado com sucesso!');
+      setEditandoPlano(null);
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao atualizar plano.');
+    }
   };
 
-  const salvarNovoPlano = () => {
+  const salvarNovoPlano = async () => {
     const preco = parseFloat(novoPreco);
     if (!novoNome || isNaN(preco) || preco <= 0) return;
-    adicionarPlano({ nome: novoNome, descricao: novoDesc, preco });
-    setNovoNome(''); setNovoDesc(''); setNovoPreco('');
-    setNovoPlanoAberto(false);
+    try {
+      await adicionarPlano({ nome: novoNome, descricao: novoDesc, preco });
+      toast.success('Plano adicionado com sucesso!');
+      setNovoNome(''); setNovoDesc(''); setNovoPreco('');
+      setNovoPlanoAberto(false);
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao adicionar plano.');
+    }
   };
 
   const salvarVagas = () => {
@@ -117,7 +162,7 @@ export default function AdminTab() {
           <Card>
             <CardHeader><CardTitle>Usuários Cadastrados</CardTitle></CardHeader>
             <CardContent>
-              {usuarios.map(u => (
+              {usuariosExibidos.map(u => (
                 <View key={u.id} style={styles.row}>
                   <View style={styles.rowIcon}>
                     <Ionicons name="person" size={18} color={Colors.teal} />
@@ -138,7 +183,14 @@ export default function AdminTab() {
                       onPress={() =>
                         Alert.alert('Remover usuário', `Deseja remover ${u.nome} ${u.sobrenome}?`, [
                           { text: 'Cancelar', style: 'cancel' },
-                          { text: 'Remover', style: 'destructive', onPress: () => removerUsuario(u.id) },
+                          { text: 'Remover', style: 'destructive', onPress: async () => {
+                            try {
+                              await removerUsuario(u.id);
+                              toast.success('Usuário removido com sucesso!');
+                            } catch (err: any) {
+                              toast.error(err.message || 'Erro ao remover usuário.');
+                            }
+                          }},
                         ])
                       }
                     >
@@ -147,6 +199,29 @@ export default function AdminTab() {
                   )}
                 </View>
               ))}
+
+              {/* Paginação Usuários */}
+              {totalPagUsuarios > 1 && (
+                <View style={styles.paginationRow}>
+                  <TouchableOpacity
+                    disabled={pagUsuarios === 1}
+                    onPress={() => setPagUsuarios(pagUsuarios - 1)}
+                    style={[styles.pageBtn, pagUsuarios === 1 && styles.pageBtnDisabled]}
+                  >
+                    <Ionicons name="chevron-back" size={16} color={pagUsuarios === 1 ? Colors.gray[300] : Colors.teal} />
+                  </TouchableOpacity>
+                  <Text style={styles.pageIndicator}>
+                    {pagUsuarios} / {totalPagUsuarios}
+                  </Text>
+                  <TouchableOpacity
+                    disabled={pagUsuarios === totalPagUsuarios}
+                    onPress={() => setPagUsuarios(pagUsuarios + 1)}
+                    style={[styles.pageBtn, pagUsuarios === totalPagUsuarios && styles.pageBtnDisabled]}
+                  >
+                    <Ionicons name="chevron-forward" size={16} color={pagUsuarios === totalPagUsuarios ? Colors.gray[300] : Colors.teal} />
+                  </TouchableOpacity>
+                </View>
+              )}
             </CardContent>
           </Card>
         )}
@@ -158,32 +233,66 @@ export default function AdminTab() {
             <CardContent>
               {pets.length === 0 ? (
                 <Text style={styles.empty}>Nenhum pet cadastrado.</Text>
-              ) : pets.map(p => (
-                <View key={p.id} style={styles.row}>
-                  <View style={styles.rowIcon}>
-                    <Ionicons name="paw" size={18} color={Colors.teal} />
-                  </View>
-                  <View style={styles.rowContent}>
-                    <View style={styles.rowHeader}>
-                      <Text style={styles.rowTitle}>{p.nome}</Text>
-                      <Badge variant="secondary">{p.especie}</Badge>
+              ) : (
+                <>
+                  {petsExibidos.map(p => (
+                    <View key={p.id} style={styles.row}>
+                      <View style={styles.rowIcon}>
+                        <Ionicons name="paw" size={18} color={Colors.teal} />
+                      </View>
+                      <View style={styles.rowContent}>
+                        <View style={styles.rowHeader}>
+                          <Text style={styles.rowTitle}>{p.nome}</Text>
+                          <Badge variant="secondary">{p.especie}</Badge>
+                        </View>
+                        <Text style={styles.rowSub}>{p.raca} · {p.porte} · {p.sexo}</Text>
+                        <Text style={styles.rowSub}>Tutor: {getUsuarioNome(p.usuarioId)}</Text>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.deleteBtn}
+                        onPress={() =>
+                          Alert.alert('Remover pet', `Deseja remover ${p.nome}?`, [
+                            { text: 'Cancelar', style: 'cancel' },
+                            { text: 'Remover', style: 'destructive', onPress: async () => {
+                              try {
+                                await removerPet(p.id);
+                                toast.success('Pet removido com sucesso!');
+                              } catch (err: any) {
+                                toast.error(err.message || 'Erro ao remover pet.');
+                              }
+                            }},
+                          ])
+                        }
+                      >
+                        <Ionicons name="close-circle" size={22} color={Colors.red} />
+                      </TouchableOpacity>
                     </View>
-                    <Text style={styles.rowSub}>{p.raca} · {p.porte} · {p.sexo}</Text>
-                    <Text style={styles.rowSub}>Tutor: {getUsuarioNome(p.usuarioId)}</Text>
-                  </View>
-                  <TouchableOpacity
-                    style={styles.deleteBtn}
-                    onPress={() =>
-                      Alert.alert('Remover pet', `Deseja remover ${p.nome}?`, [
-                        { text: 'Cancelar', style: 'cancel' },
-                        { text: 'Remover', style: 'destructive', onPress: () => removerPet(p.id) },
-                      ])
-                    }
-                  >
-                    <Ionicons name="close-circle" size={22} color={Colors.red} />
-                  </TouchableOpacity>
-                </View>
-              ))}
+                  ))}
+
+                  {/* Paginação Pets */}
+                  {totalPagPets > 1 && (
+                    <View style={styles.paginationRow}>
+                      <TouchableOpacity
+                        disabled={pagPets === 1}
+                        onPress={() => setPagPets(pagPets - 1)}
+                        style={[styles.pageBtn, pagPets === 1 && styles.pageBtnDisabled]}
+                      >
+                        <Ionicons name="chevron-back" size={16} color={pagPets === 1 ? Colors.gray[300] : Colors.teal} />
+                      </TouchableOpacity>
+                      <Text style={styles.pageIndicator}>
+                        {pagPets} / {totalPagPets}
+                      </Text>
+                      <TouchableOpacity
+                        disabled={pagPets === totalPagPets}
+                        onPress={() => setPagPets(pagPets + 1)}
+                        style={[styles.pageBtn, pagPets === totalPagPets && styles.pageBtnDisabled]}
+                      >
+                        <Ionicons name="chevron-forward" size={16} color={pagPets === totalPagPets ? Colors.gray[300] : Colors.teal} />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
         )}
@@ -211,48 +320,75 @@ export default function AdminTab() {
               <CardContent>
                 {reservas.length === 0 ? (
                   <Text style={styles.empty}>Nenhuma reserva cadastrada.</Text>
-                ) : reservas.map(r => (
-                  <View key={r.id} style={styles.row}>
-                    <View style={styles.rowIcon}>
-                      <Ionicons name="calendar" size={18} color={Colors.teal} />
-                    </View>
-                    <View style={styles.rowContent}>
-                      <View style={styles.rowHeader}>
-                        <Text style={styles.rowTitle}>{getPetNome(r.petId)}</Text>
-                        <Badge
-                          variant={
-                            r.status === 'Ativa' ? 'default'
-                            : r.status === 'Cancelada' ? 'destructive'
-                            : 'secondary'
+                ) : (
+                  <>
+                    {reservasExibidas.map(r => (
+                      <View key={r.id} style={styles.row}>
+                        <View style={styles.rowIcon}>
+                          <Ionicons name="calendar" size={18} color={Colors.teal} />
+                        </View>
+                        <View style={styles.rowContent}>
+                          <View style={styles.rowHeader}>
+                            <Text style={styles.rowTitle}>{getPetNome(r.petId)}</Text>
+                            <Badge
+                              variant={
+                                r.status === 'Ativa' ? 'default'
+                                : r.status === 'Cancelada' ? 'destructive'
+                                : 'secondary'
+                              }
+                            >
+                              {r.status}
+                            </Badge>
+                          </View>
+                          <View style={styles.tutorRow}>
+                            <Ionicons name="person-circle-outline" size={13} color={Colors.teal} />
+                            <Text style={styles.tutorText}>{getUsuarioNome(r.usuarioId)}</Text>
+                          </View>
+                          <Text style={styles.rowSub}>
+                            {fmt(r.dataEntrada)} → {fmt(r.dataSaidaPrevista)}
+                          </Text>
+                          <Text style={styles.rowSub}>
+                            {r.tipoAcomodacao} · R$ {r.valorTotal.toFixed(2)}
+                          </Text>
+                        </View>
+                        <TouchableOpacity
+                          style={styles.deleteBtn}
+                          onPress={() =>
+                            Alert.alert('Remover reserva', `Deseja remover a reserva de ${getPetNome(r.petId)}?`, [
+                              { text: 'Cancelar', style: 'cancel' },
+                              { text: 'Remover', style: 'destructive', onPress: () => removerReserva(r.id) },
+                            ])
                           }
                         >
-                          {r.status}
-                        </Badge>
+                          <Ionicons name="close-circle" size={22} color={Colors.red} />
+                        </TouchableOpacity>
                       </View>
-                      <View style={styles.tutorRow}>
-                        <Ionicons name="person-circle-outline" size={13} color={Colors.teal} />
-                        <Text style={styles.tutorText}>{getUsuarioNome(r.usuarioId)}</Text>
+                    ))}
+
+                    {/* Paginação Reservas */}
+                    {totalPagReservas > 1 && (
+                      <View style={styles.paginationRow}>
+                        <TouchableOpacity
+                          disabled={pagReservas === 1}
+                          onPress={() => setPagReservas(pagReservas - 1)}
+                          style={[styles.pageBtn, pagReservas === 1 && styles.pageBtnDisabled]}
+                        >
+                          <Ionicons name="chevron-back" size={16} color={pagReservas === 1 ? Colors.gray[300] : Colors.teal} />
+                        </TouchableOpacity>
+                        <Text style={styles.pageIndicator}>
+                          {pagReservas} / {totalPagReservas}
+                        </Text>
+                        <TouchableOpacity
+                          disabled={pagReservas === totalPagReservas}
+                          onPress={() => setPagReservas(pagReservas + 1)}
+                          style={[styles.pageBtn, pagReservas === totalPagReservas && styles.pageBtnDisabled]}
+                        >
+                          <Ionicons name="chevron-forward" size={16} color={pagReservas === totalPagReservas ? Colors.gray[300] : Colors.teal} />
+                        </TouchableOpacity>
                       </View>
-                      <Text style={styles.rowSub}>
-                        {fmt(r.dataEntrada)} → {fmt(r.dataSaidaPrevista)}
-                      </Text>
-                      <Text style={styles.rowSub}>
-                        {r.tipoAcomodacao} · R$ {r.valorTotal.toFixed(2)}
-                      </Text>
-                    </View>
-                    <TouchableOpacity
-                      style={styles.deleteBtn}
-                      onPress={() =>
-                        Alert.alert('Remover reserva', `Deseja remover a reserva de ${getPetNome(r.petId)}?`, [
-                          { text: 'Cancelar', style: 'cancel' },
-                          { text: 'Remover', style: 'destructive', onPress: () => removerReserva(r.id) },
-                        ])
-                      }
-                    >
-                      <Ionicons name="close-circle" size={22} color={Colors.red} />
-                    </TouchableOpacity>
-                  </View>
-                ))}
+                    )}
+                  </>
+                )}
               </CardContent>
             </Card>
           </View>
@@ -342,7 +478,14 @@ export default function AdminTab() {
                             onPress={() =>
                               Alert.alert('Remover plano', `Deseja remover o plano "${p.nome}"?`, [
                                 { text: 'Cancelar', style: 'cancel' },
-                                { text: 'Remover', style: 'destructive', onPress: () => removerPlano(p.id) },
+                                { text: 'Remover', style: 'destructive', onPress: async () => {
+                                  try {
+                                    await removerPlano(p.id);
+                                    toast.success('Plano removido com sucesso!');
+                                  } catch (err: any) {
+                                    toast.error(err.message || 'Erro ao remover plano.');
+                                  }
+                                }},
                               ])
                             }
                           >
@@ -456,4 +599,32 @@ const styles = StyleSheet.create({
   vagasInput: { flex: 1, borderWidth: 1.5, borderColor: Colors.gray[200], borderRadius: BorderRadius.md, padding: Spacing[3], fontSize: FontSizes.lg, fontWeight: '700', color: Colors.gray[900], backgroundColor: Colors.white },
   vagasBtn: { backgroundColor: Colors.teal, borderRadius: BorderRadius.md, padding: Spacing[3] },
   vagasAtual: { fontSize: FontSizes.xs, color: Colors.gray[400], marginTop: Spacing[2] },
+
+  // paginacao
+  paginationRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing[4],
+    marginTop: Spacing[4],
+    paddingTop: Spacing[2],
+  },
+  pageBtn: {
+    padding: Spacing[2],
+    borderRadius: BorderRadius.md,
+    borderWidth: 1.5,
+    borderColor: Colors.teal,
+    backgroundColor: Colors.white,
+  },
+  pageBtnDisabled: {
+    borderColor: Colors.gray[200],
+    backgroundColor: Colors.gray[50],
+  },
+  pageIndicator: {
+    fontSize: FontSizes.sm,
+    fontWeight: '700',
+    color: Colors.gray[700],
+    minWidth: 40,
+    textAlign: 'center',
+  },
 });

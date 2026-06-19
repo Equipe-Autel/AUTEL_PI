@@ -1,6 +1,6 @@
 import { PetRepository } from './pet.repository'
 import { CreatePetDTO, UpdatePetDTO } from './pet.types'
-import { NotFoundError, ForbiddenError } from '../../shared/errors/appError'
+import { NotFoundError, ForbiddenError } from '../../shared/errors/AppError'
 
 export class PetService {
   private petRepository: PetRepository
@@ -39,6 +39,11 @@ export class PetService {
 
   async getPetsByUser(userId: string) {
     const pets = await this.petRepository.findByUserId(userId)
+    return pets.map((pet: any) => this.serializePet(pet))
+  }
+
+  async getAllPets() {
+    const pets = await this.petRepository.findAll()
     return pets.map((pet: any) => this.serializePet(pet))
   }
 

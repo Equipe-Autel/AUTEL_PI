@@ -58,7 +58,7 @@ export default function CadastroUsuario() {
   const setPhone = (val: string) => setForm(prev => ({ ...prev, telefone: maskPhone(val) }));
   const setPhoneEmerg = (val: string) => setForm(prev => ({ ...prev, telefoneEmergencia: maskPhone(val) }));
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const required = [
       form.nome, form.sobrenome, form.cpf, form.telefone, form.email,
       form.senha, form.logradouro, form.numero, form.bairro, form.cidade, form.estado,
@@ -73,10 +73,13 @@ export default function CadastroUsuario() {
       return;
     }
 
-    const novo = adicionarUsuario({ ...form, isAdmin: false });
-    login(novo.email, form.senha);
-    toast.success('Cadastro realizado com sucesso!');
-    router.push('/cadastro-pet');
+    try {
+      await adicionarUsuario({ ...form, isAdmin: false });
+      toast.success('Cadastro realizado com sucesso! Faça login para continuar.');
+      router.replace('/login');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao realizar cadastro.');
+    }
   };
 
   return (

@@ -42,7 +42,7 @@ const fmt = (iso: string) =>
   iso ? new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '';
 
 export default function MinhasReservas() {
-  const { usuarioLogado, usuarios, reservas, pets, cancelarReserva, atualizarReserva, calcularValorHospedagem } = useApp();
+  const { usuarioLogado, usuarios, reservas, pets, planos, cancelarReserva, atualizarReserva, calcularValorHospedagem } = useApp();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -81,37 +81,43 @@ export default function MinhasReservas() {
   const diasRestantes = (dataEntrada: string) =>
     Math.ceil((new Date(dataEntrada).getTime() - Date.now()) / 86400000);
 
-  const handleCancelar = () => {
+  const handleCancelar = async () => {
     if (!cancelModal) return;
-    const { sucesso, multa } = cancelarReserva(cancelModal.id);
-    
-    if (sucesso) {
-      multa > 0
-        ? toast.warning(`Cancelada. Multa de R$ ${multa.toFixed(2)} aplicada.`)
-        : toast.success('Reserva cancelada com sucesso!');
-    } else {
-      toast.error('Não foi possível cancelar a reserva.');
+    try {
+      const { sucesso, multa } = await cancelarReserva(cancelModal.id);
+      if (sucesso) {
+        multa > 0
+          ? toast.warning(`Cancelada. Multa de R$ ${multa.toFixed(2)} aplicada.`)
+          : toast.success('Reserva cancelada com sucesso!');
+      } else {
+        toast.error('Não foi possível cancelar a reserva.');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Não foi possível cancelar a reserva.');
     }
     setCancelModal(null);
   };
 
   const openEdit = (r: Reserva) => {
     setEditModal(r);
-    setEditDataSaida(r.dataSaidaPrevista);
+    setEditDataSaida(r.dataSaidaPrevista ? r.dataSaidaPrevista.split('T')[0] : '');
     setEditAcomodacao(r.tipoAcomodacao);
   };
 
-  const handleEditar = () => {
+  const handleEditar = async () => {
     if (!editModal || !editDataSaida) return;
     const novoValor = calcularValorHospedagem(editModal.dataEntrada, editDataSaida, editAcomodacao);
     
-    atualizarReserva(editModal.id, {
-      dataSaidaPrevista: editDataSaida,
-      tipoAcomodacao: editAcomodacao,
-      valorTotal: novoValor,
-    });
-    
-    toast.success('Alterações salvas!');
+    try {
+      await atualizarReserva(editModal.id, {
+        dataSaidaPrevista: editDataSaida,
+        tipoAcomodacao: editAcomodacao,
+        valorTotal: novoValor,
+      });
+      toast.success('Alterações salvas!');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao salvar alterações.');
+    }
     setEditModal(null);
   };
 
@@ -130,7 +136,7 @@ export default function MinhasReservas() {
         </View>
         <Text style={styles.emptyTitle}>Nenhuma reserva por aqui</Text>
         <Text style={styles.emptyDesc}>Seu histórico de hospedagens aparecerá aqui assim que você fizer sua primeira reserva.</Text>
-        <Button onPress={() => router.push('/hotel')} style={{ marginTop: Spacing[4] }}>
+        <Button onPress={() => router.push({ pathname: '/hotel', params: { autoOpen: 'true' } })} style={{ marginTop: Spacing[4] }}>
           Fazer uma Reserva
         </Button>
       </View>
@@ -262,81 +268,85 @@ export default function MinhasReservas() {
       </ScrollView>
 
       {/* MODAL: CANCELAMENTO */}
-      <Modal visible={!!cancelModal} transparent animationType="fade" onRequestClose={() => setCancelModal(null)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Confirmar Cancelamento</Text>
-            <Text style={styles.modalDesc}>Deseja mesmo interromper esta reserva?</Text>
+      {!!cancelModal && (
+        <Modal visible={!!cancelModal} transparent animationType="fade" onRequestClose={() => setCancelModal(null)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalSheet}>
+              <Text style={styles.modalTitle}>Confirmar Cancelamento</Text>
+              <Text style={styles.modalDesc}>Deseja mesmo interromper esta reserva?</Text>
 
-            {cancelModal && (() => {
-              const { temMulta, multa } = getCancelInfo(cancelModal);
-              return temMulta ? (
-                <View style={styles.multaWarning}>
-                  <Ionicons name="alert-circle" size={24} color="#92400E" />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.multaTitle}>Política de Multa Ativa</Text>
-                    <Text style={styles.multaDesc}>Cancelamentos com menos de 7 dias de antecedência geram multa de 30%.</Text>
-                    <Text style={styles.multaValor}>Taxa de cancelamento: R$ {multa.toFixed(2)}</Text>
+              {cancelModal && (() => {
+                const { temMulta, multa } = getCancelInfo(cancelModal);
+                return temMulta ? (
+                  <View style={styles.multaWarning}>
+                    <Ionicons name="alert-circle" size={24} color="#92400E" />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.multaTitle}>Política de Multa Ativa</Text>
+                      <Text style={styles.multaDesc}>Cancelamentos com menos de 7 dias de antecedência geram multa de 30%.</Text>
+                      <Text style={styles.multaValor}>Taxa de cancelamento: R$ {multa.toFixed(2)}</Text>
+                    </View>
                   </View>
-                </View>
-              ) : (
-                <View style={styles.semMulta}>
-                  <Ionicons name="checkmark-circle" size={20} color={Colors.green} />
-                  <Text style={{ color: '#15803D', fontSize: FontSizes.sm, flex: 1, fontWeight: '500' }}>
-                    Cancelamento Gratuito liberado para este período!
-                  </Text>
-                </View>
-              );
-            })()}
+                ) : (
+                  <View style={styles.semMulta}>
+                    <Ionicons name="checkmark-circle" size={20} color={Colors.green} />
+                    <Text style={{ color: '#15803D', fontSize: FontSizes.sm, flex: 1, fontWeight: '500' }}>
+                      Cancelamento Gratuito liberado para este período!
+                    </Text>
+                  </View>
+                );
+              })()}
 
-            <View style={styles.modalBtns}>
-              <Button variant="outline" onPress={() => setCancelModal(null)} style={{ flex: 1 }}>Manter Reserva</Button>
-              <Button variant="destructive" onPress={handleCancelar} style={{ flex: 1 }}>Confirmar</Button>
+              <View style={styles.modalBtns}>
+                <Button variant="outline" onPress={() => setCancelModal(null)} style={{ flex: 1 }}>Manter Reserva</Button>
+                <Button variant="destructive" onPress={handleCancelar} style={{ flex: 1 }}>Confirmar</Button>
+              </View>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      )}
 
       {/* modal de edição*/}
-      <Modal visible={!!editModal} transparent animationType="slide" onRequestClose={() => setEditModal(null)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Ajustar Estadia</Text>
-            <Text style={styles.modalDesc}>Você pode alterar a data de saída e o tipo de quarto.</Text>
+      {!!editModal && (
+        <Modal visible={!!editModal} transparent animationType="slide" onRequestClose={() => setEditModal(null)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalSheet}>
+              <Text style={styles.modalTitle}>Ajustar Estadia</Text>
+              <Text style={styles.modalDesc}>Você pode alterar a data de saída e o tipo de quarto.</Text>
 
-            <DatePicker
-              label="Nova Data de Saída"
-              value={editDataSaida}
-              onChange={setEditDataSaida}
-              minimumDate={editModal?.dataEntrada}
-            />
+              <DatePicker
+                label="Nova Data de Saída"
+                value={editDataSaida}
+                onChange={setEditDataSaida}
+                minimumDate={editModal?.dataEntrada}
+              />
 
-            <Select
-              label="Alterar Acomodação"
-              options={ACOMODACOES}
-              value={editAcomodacao}
-              onChange={v => setEditAcomodacao(v as any)}
-            />
+              <Select
+                label="Alterar Acomodação"
+                options={planos.map(p => ({ label: `${p.nome} — ${p.descricao} (R$ ${p.preco}/dia)`, value: p.nome }))}
+                value={editAcomodacao}
+                onChange={v => setEditAcomodacao(v as any)}
+              />
 
-            {editModal && editDataSaida && (
-              <View style={styles.novoValor}>
-                <View>
-                  <Text style={styles.novoValorLabel}>Novo valor total:</Text>
-                  <Text style={styles.novoValorPrice}>
-                    R$ {calcularValorHospedagem(editModal.dataEntrada, editDataSaida, editAcomodacao).toFixed(2)}
-                  </Text>
+              {editModal && editDataSaida && (
+                <View style={styles.novoValor}>
+                  <View>
+                    <Text style={styles.novoValorLabel}>Novo valor total:</Text>
+                    <Text style={styles.novoValorPrice}>
+                      R$ {calcularValorHospedagem(editModal.dataEntrada, editDataSaida, editAcomodacao).toFixed(2)}
+                    </Text>
+                  </View>
+                  <Ionicons name="calculator-outline" size={24} color={Colors.blue} />
                 </View>
-                <Ionicons name="calculator-outline" size={24} color={Colors.blue} />
-              </View>
-            )}
+              )}
 
-            <View style={styles.modalBtns}>
-              <Button variant="outline" onPress={() => setEditModal(null)} style={{ flex: 1 }}>Descartar</Button>
-              <Button onPress={handleEditar} style={{ flex: 1 }}>Salvar Alterações</Button>
+              <View style={styles.modalBtns}>
+                <Button variant="outline" onPress={() => setEditModal(null)} style={{ flex: 1 }}>Descartar</Button>
+                <Button onPress={handleEditar} style={{ flex: 1 }}>Salvar Alterações</Button>
+              </View>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      )}
     </>
   );
 }

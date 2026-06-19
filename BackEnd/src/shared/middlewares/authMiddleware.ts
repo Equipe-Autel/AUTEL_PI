@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { jwtDecode } from '../jwtService'
-import { UnauthorizedError } from '../errors/appError'
+import { UnauthorizedError } from '../errors/AppError'
 
 export function authenticate(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization

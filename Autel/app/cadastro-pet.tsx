@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../src/components/ui/Card';
 import { Button } from '../src/components/ui/Button';
 import { Input } from '../src/components/ui/Input';
@@ -22,6 +23,7 @@ export default function CadastroPet() {
   const { usuarioLogado, usuarios, adicionarPet } = useApp();
   const { toast } = useToast();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [clienteId, setClienteId] = useState('');
   const [form, setForm] = useState({
@@ -58,7 +60,7 @@ export default function CadastroPet() {
     .filter(u => !u.isAdmin)
     .map(u => ({ label: `${u.nome} ${u.sobrenome} — ${u.email}`, value: u.id }));
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (isAdmin && !clienteId) {
       toast.error('Selecione o cliente dono do pet.');
       return;
@@ -80,20 +82,25 @@ export default function CadastroPet() {
       return;
     }
 
-    adicionarPet({
-      ...form,
-      idade: idadeNum,
-      peso: pesoNum,
-      usuarioId: isAdmin ? clienteId : usuarioLogado.id,
-    });
+    try {
+      await adicionarPet({
+        ...form,
+        idade: idadeNum,
+        peso: pesoNum,
+        usuarioId: isAdmin ? clienteId : usuarioLogado.id,
+      });
 
-    toast.success(`${form.nome} cadastrado com sucesso!`);
-    router.back();
+      toast.success(`${form.nome} cadastrado com sucesso!`);
+      router.back();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao cadastrar pet.');
+    }
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.content}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.beige }} edges={['top', 'left', 'right']}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
         <Card>
           <CardHeader style={styles.header}>
             <View style={styles.iconWrap}>
@@ -256,7 +263,8 @@ export default function CadastroPet() {
           </CardContent>
         </Card>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

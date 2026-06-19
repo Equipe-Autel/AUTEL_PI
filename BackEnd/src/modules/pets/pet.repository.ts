@@ -35,6 +35,10 @@ export class PetRepository {
     })
   }
 
+  async findAll() {
+    return await prisma.pet.findMany()
+  }
+
   async update(id: string, data: UpdatePetDTO) {
     return await prisma.pet.update({
       where: { id: BigInt(id) },

@@ -8,6 +8,12 @@ export async function findById(id: bigint) {
   })
 }
 
+export async function findAll() {
+  return prisma.usuario.findMany({
+    include: { endereco: true },
+  })
+}
+
 export async function findByEmail(email: string) {
   return prisma.usuario.findUnique({ where: { email } })
 }
@@ -58,7 +64,20 @@ export async function updateUser(id: bigint, data: UpdateUserDTO) {
 }
 
 export async function deleteUser(id: bigint) {
-  return prisma.usuario.delete({ where: { id } })
+  return prisma.$transaction(async (tx) => {
+    // 1. Delete associated reservations
+    await tx.reserva.deleteMany({ where: { usuario_id: id } })
+    // 2. Delete associated pets
+    await tx.pet.deleteMany({ where: { usuario_id: id } })
+    // 3. Find user to get address ID before deleting the user
+    const user = await tx.usuario.findUnique({ where: { id } })
+    if (user) {
+      // 4. Delete the user
+      await tx.usuario.delete({ where: { id } })
+      // 5. Delete associated address
+      await tx.endereco.delete({ where: { id: user.endereco_id } })
+    }
+  })
 }
 
 export async function findFuncionarioByCod(codFunc: string) {

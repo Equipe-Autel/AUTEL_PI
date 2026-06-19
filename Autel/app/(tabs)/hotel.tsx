@@ -7,7 +7,7 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 // Componentes UI do sistema
@@ -32,6 +32,7 @@ export default function Hotel() {
   const { usuarioLogado, usuarios, pets, planos, adicionarReserva, calcularValorHospedagem, obterVagasDisponiveis } = useApp();
   const { toast } = useToast();
   const router = useRouter();
+  const { autoOpen } = useLocalSearchParams<{ autoOpen?: string }>();
 
   // estados do formulário de reserva
   const [petId, setPetId] = useState('');
@@ -55,6 +56,13 @@ export default function Hotel() {
       setAcomodacao(planos[0].nome);
     }
   }, [planos]);
+
+  // Abre o formulário automaticamente se vier da tela de reservas sem reservas
+  useEffect(() => {
+    if (autoOpen === 'true') {
+      setMostrarForm(true);
+    }
+  }, [autoOpen]);
 
   // Admin vê todos os pets de clientes; usuário comum só os seus
   const meusPets = !usuarioLogado
@@ -135,7 +143,7 @@ export default function Hotel() {
     );
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!petId) { toast.error('Por favor, selecione qual pet ficará conosco.'); return; }
     if (!dataEntrada || !dataSaida) { toast.error('As datas de check-in e check-out são obrigatórias.'); return; }
     
@@ -143,36 +151,39 @@ export default function Hotel() {
       toast.error('Infelizmente não temos vagas para este período.'); return;
     }
 
-    const petSelecionado = meusPets.find(p => p.id === petId);
-    const donoPetId = isAdmin && petSelecionado ? petSelecionado.usuarioId : usuarioLogado.id;
+    try {
+      const petSelecionado = meusPets.find(p => p.id === petId);
+      const donoPetId = isAdmin && petSelecionado ? petSelecionado.usuarioId : usuarioLogado.id;
 
-    adicionarReserva({
-      petId,
-      usuarioId: donoPetId,
-      dataEntrada,
-      dataSaidaPrevista: dataSaida,
-      responsavelAlimentacao: alimentacao,
-      tipoAcomodacao: acomodacao,
-      observacoesComida: observacoes,
-      status: 'Ativa',
-      valorTotal,
-    });
+      await adicionarReserva({
+        petId,
+        usuarioId: donoPetId,
+        dataEntrada,
+        dataSaidaPrevista: dataSaida,
+        responsavelAlimentacao: alimentacao,
+        tipoAcomodacao: acomodacao,
+        observacoesComida: observacoes,
+        status: 'Ativa',
+        valorTotal,
+      });
 
-    const pet = meusPets.find(p => p.id === petId);
-    toast.success(`Reserva para ${pet?.nome} realizada com sucesso!`);
-    
-    // Reseta os campos do formulário para o estado inicial
-    setPetId('');
-    setDataEntrada('');
-    setDataSaida('');
-    setAlimentacao('Hotel');
-    if (planos.length > 0) {
-      setAcomodacao(planos[0].nome);
+      const pet = meusPets.find(p => p.id === petId);
+      toast.success(`Reserva para ${pet?.nome} realizada com sucesso!`);
+      
+      setPetId('');
+      setDataEntrada('');
+      setDataSaida('');
+      setAlimentacao('Hotel');
+      if (planos.length > 0) {
+        setAcomodacao(planos[0].nome);
+      }
+      setObservacoes('');
+      setMostrarForm(false);
+
+      router.push('/minhas-reservas');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao realizar reserva.');
     }
-    setObservacoes('');
-    setMostrarForm(false);
-
-    router.push('/minhas-reservas');
   };
 
   // Lógica de cor para o banner de vagas
@@ -280,20 +291,27 @@ export default function Hotel() {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.content}>
-        <Card style={styles.mainCard}>
-          <CardHeader>
-            <View style={styles.formHeaderRow}>
-              <View style={{ flex: 1 }}>
-                <CardTitle>Nova Hospedagem</CardTitle>
-                <Text style={styles.subtitle}>Preencha os detalhes para a estadia</Text>
-              </View>
-              <TouchableOpacity onPress={() => setMostrarForm(false)} style={styles.backButton}>
-                <Ionicons name="arrow-back-circle-outline" size={28} color={Colors.teal} />
-              </TouchableOpacity>
+        <View style={{
+          backgroundColor: Colors.white,
+          borderRadius: BorderRadius.lg,
+          padding: Spacing[4],
+        }}>
+          <View style={styles.formHeaderRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={{
+                fontSize: FontSizes.lg,
+                fontWeight: '700',
+                color: Colors.gray[900],
+                marginBottom: 4,
+              }}>Nova Hospedagem</Text>
+              <Text style={styles.subtitle}>Preencha os detalhes para a estadia</Text>
             </View>
-          </CardHeader>
-          
-          <CardContent>
+            <TouchableOpacity onPress={() => setMostrarForm(false)} style={styles.backButton}>
+              <Ionicons name="arrow-back-circle-outline" size={28} color={Colors.teal} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ marginTop: Spacing[4] }}>
             <Select
               label="Quem vai se hospedar? *"
               options={petOptions}
@@ -394,8 +412,8 @@ export default function Hotel() {
             >
               Finalizar Reserva
             </Button>
-          </CardContent>
-        </Card>
+          </View>
+        </View>
       </View>
     </ScrollView>
   );

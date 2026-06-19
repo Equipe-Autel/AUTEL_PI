@@ -1,6 +1,6 @@
 import { PlanRepository } from './plan.repository'
 import { CreatePlanDTO, UpdatePlanDTO, PlanResponse } from './plan.types'
-import { NotFoundError, ValidationError } from '../../shared/errors/appError'
+import { NotFoundError, ValidationError } from '../../shared/errors/AppError'
 
 export class PlanService {
   private planRepository: PlanRepository

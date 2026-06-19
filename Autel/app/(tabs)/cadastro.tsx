@@ -53,7 +53,7 @@ export default function Cadastro() {
 
   if (!usuarioLogado?.isAdmin) return null;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const required = [
       form.nome, form.sobrenome, form.cpf, form.telefone, form.email,
       form.logradouro, form.numero, form.bairro, form.cidade, form.estado,
@@ -63,9 +63,13 @@ export default function Cadastro() {
       return;
     }
 
-    adicionarUsuario({ ...form, isAdmin: false });
-    toast.success(`Cliente ${form.nome} ${form.sobrenome} cadastrado com sucesso!`);
-    setForm(FORM_INITIAL);
+    try {
+      await adicionarUsuario({ ...form, senha: 'senha_padrao_123', isAdmin: false });
+      toast.success(`Cliente ${form.nome} ${form.sobrenome} cadastrado com sucesso!`);
+      setForm(FORM_INITIAL);
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao cadastrar cliente.');
+    }
   };
 
   return (

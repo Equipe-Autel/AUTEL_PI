@@ -38,7 +38,7 @@ export class ReservationController {
   show = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const reserva = await this.reservationService.getReservationById(
-        req.params.id,
+        req.params.id as string,
         req.user!.id,
         req.user!.role
       )
@@ -51,7 +51,7 @@ export class ReservationController {
   update = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const reserva = await this.reservationService.updateReservation(
-        req.params.id,
+        req.params.id as string,
         req.body,
         req.user!.id
       )
@@ -63,7 +63,7 @@ export class ReservationController {
 
   cancel = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const reserva = await this.reservationService.cancelReservation(req.params.id, req.user!.id)
+      const reserva = await this.reservationService.cancelReservation(req.params.id as string, req.user!.id)
       return res.status(200).json(reserva)
     } catch (error) {
       next(error)
