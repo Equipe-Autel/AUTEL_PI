@@ -57,12 +57,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Carrega dados do AsyncStorage na inicialização
   useEffect(() => {
     const loadData = async () => {
-      const [storedUsuarios, storedPets, storedReservas, storedUsuarioLogado, storedPlanos, storedVagas, token] = await Promise.all([
+      const [storedUsuarios, storedPets, storedReservas, storedUsuarioLogado, storedVagas, token] = await Promise.all([
         getItem<Usuario[]>(STORAGE_KEYS.USUARIOS),
         getItem<Pet[]>(STORAGE_KEYS.PETS),
         getItem<Reserva[]>(STORAGE_KEYS.RESERVAS),
         getItem<Usuario>(STORAGE_KEYS.USUARIO_LOGADO),
-        getItem<Plano[]>(STORAGE_KEYS.PLANOS),
         getItem<number>(STORAGE_KEYS.VAGAS_TOTAIS),
         getItem<string>('auth_token'),
       ]);
@@ -73,10 +72,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       
       try {
         const backendPlans = await apiListPlans();
-        setPlanos(backendPlans.length > 0 ? backendPlans : (storedPlanos ?? PLANOS_PADRAO));
+        setPlanos(backendPlans.length > 0 ? backendPlans : PLANOS_PADRAO);
       } catch (err) {
         console.log('[AppContext] Erro ao buscar planos do backend, usando padrao:', err);
-        setPlanos(storedPlanos ?? PLANOS_PADRAO);
+        setPlanos(PLANOS_PADRAO);
       }
       setVagasTotais(storedVagas ?? VAGAS_PADRAO);
       
@@ -113,11 +112,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!loading) setItem(STORAGE_KEYS.RESERVAS, reservas);
   }, [reservas, loading]);
 
-  // Persiste planos e vagas
-  useEffect(() => {
-    if (!loading) setItem(STORAGE_KEYS.PLANOS, planos);
-  }, [planos, loading]);
-
+  // Persiste vagas
   useEffect(() => {
     if (!loading) setItem(STORAGE_KEYS.VAGAS_TOTAIS, vagasTotais);
   }, [vagasTotais, loading]);

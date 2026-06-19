@@ -3,8 +3,8 @@ import app from './app'
 
 const PORT = process.env.PORT ?? 3000
 
-const server = app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`)
+const server = app.listen(Number(PORT), "0.0.0.0", () => {
+  console.log(`Servidor rodando na porta ${PORT} (e IP de rede local)`)
 })
 
 process.on('uncaughtException', (err) => {
