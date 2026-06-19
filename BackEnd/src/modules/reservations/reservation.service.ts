@@ -19,6 +19,14 @@ function calcDays(checkin: Date, checkout: Date): number {
   return Math.ceil(ms / (1000 * 60 * 60 * 24))
 }
 
+function parseLocalDate(value: string | Date): Date {
+  if (value instanceof Date) {
+    return new Date(value.getFullYear(), value.getMonth(), value.getDate())
+  }
+  const [y, m, d] = value.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
 export class ReservationService {
   private reservationRepository: ReservationRepository
 
@@ -51,8 +59,8 @@ export class ReservationService {
   }
 
   async createReservation(data: CreateReservationDTO, usuarioId: string): Promise<ReservationResponse> {
-    const checkin = new Date(data.checkin)
-    const checkout = new Date(data.checkout)
+    const checkin = parseLocalDate(data.checkin)
+    const checkout = parseLocalDate(data.checkout)
     const hoje = new Date()
     hoje.setHours(0, 0, 0, 0)
 
@@ -110,8 +118,8 @@ export class ReservationService {
       if (!plano) throw new NotFoundError('Plano não encontrado')
     }
 
-    const checkin = data.checkin ? new Date(data.checkin) : reserva.checkin
-    const checkout = data.checkout ? new Date(data.checkout) : reserva.checkout
+    const checkin = parseLocalDate(data.checkin ?? reserva.checkin)
+    const checkout = parseLocalDate(data.checkout ?? reserva.checkout)
     if (checkout <= checkin) throw new ValidationError('Data de checkout deve ser após o check-in')
 
     const updated = await this.reservationRepository.update(BigInt(id), {
