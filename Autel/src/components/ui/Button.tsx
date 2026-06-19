@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   ViewStyle,
   TextStyle,
+  StyleProp,
 } from 'react-native';
 import { Colors, BorderRadius, FontSizes } from '../../constants/theme';
 
@@ -19,8 +20,8 @@ interface ButtonProps {
   size?: Size;
   disabled?: boolean;
   loading?: boolean;
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
   fullWidth?: boolean;
 }
 
@@ -35,21 +36,21 @@ export const Button: React.FC<ButtonProps> = ({
   textStyle,
   fullWidth,
 }) => {
-  const containerStyle: ViewStyle[] = [
+  const containerStyle = [
     styles.base,
     styles[`variant_${variant}`],
     styles[`size_${size}`],
     fullWidth && styles.fullWidth,
     (disabled || loading) && styles.disabled,
-    style as ViewStyle,
-  ].filter(Boolean) as ViewStyle[];
+    style,
+  ];
 
-  const labelStyle: TextStyle[] = [
+  const labelStyle = [
     styles.text,
     styles[`text_${variant}`],
     styles[`textSize_${size}`],
-    textStyle as TextStyle,
-  ].filter(Boolean) as TextStyle[];
+    textStyle,
+  ];
 
   return (
     <TouchableOpacity

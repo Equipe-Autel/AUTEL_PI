@@ -36,6 +36,7 @@ export default function CadastroUsuario() {
     cpf: '',
     telefone: '',
     email: '',
+    senha: '',
     logradouro: '',
     numero: '',
     complemento: '',
@@ -57,20 +58,28 @@ export default function CadastroUsuario() {
   const setPhone = (val: string) => setForm(prev => ({ ...prev, telefone: maskPhone(val) }));
   const setPhoneEmerg = (val: string) => setForm(prev => ({ ...prev, telefoneEmergencia: maskPhone(val) }));
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const required = [
       form.nome, form.sobrenome, form.cpf, form.telefone, form.email,
-      form.logradouro, form.numero, form.bairro, form.cidade, form.estado,
+      form.senha, form.logradouro, form.numero, form.bairro, form.cidade, form.estado,
     ];
     if (required.some(f => !f)) {
       toast.error('Preencha todos os campos obrigatórios.');
       return;
     }
 
-    const novo = adicionarUsuario({ ...form, isAdmin: false });
-    login(novo.email);
-    toast.success('Cadastro realizado com sucesso!');
-    router.push('/cadastro-pet');
+    if (form.senha.length < 6) {
+      toast.error('A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+
+    try {
+      await adicionarUsuario({ ...form, isAdmin: false });
+      toast.success('Cadastro realizado com sucesso! Faça login para continuar.');
+      router.replace('/login');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao realizar cadastro.');
+    }
   };
 
   return (
@@ -131,6 +140,15 @@ export default function CadastroUsuario() {
               onChangeText={set('email')}
               placeholder="seu@email.com"
               keyboardType="email-address"
+              autoCapitalize="none"
+            />
+
+            <Input
+              label="Senha *"
+              value={form.senha}
+              onChangeText={set('senha')}
+              placeholder="Mínimo de 6 caracteres"
+              secureTextEntry
               autoCapitalize="none"
             />
 

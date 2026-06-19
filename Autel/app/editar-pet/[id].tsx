@@ -54,7 +54,7 @@ export default function EditarPet() {
     );
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.nome || !form.raca || !form.idade || !form.peso) {
       toast.error('Preencha os campos obrigatórios.');
       return;
@@ -72,9 +72,13 @@ export default function EditarPet() {
       return;
     }
 
-    atualizarPet(pet.id, { ...form, idade: idadeNum, peso: pesoNum });
-    toast.success(`${form.nome} atualizado com sucesso!`);
-    router.back();
+    try {
+      await atualizarPet(pet.id, { ...form, idade: idadeNum, peso: pesoNum });
+      toast.success(`${form.nome} atualizado com sucesso!`);
+      router.back();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao atualizar pet.');
+    }
   };
 
   return (

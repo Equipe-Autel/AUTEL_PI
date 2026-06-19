@@ -7,6 +7,7 @@ import {
   FlatList,
   StyleSheet,
   ViewStyle,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, BorderRadius, FontSizes, Spacing } from '../../constants/theme';
@@ -36,6 +37,42 @@ export const Select: React.FC<SelectProps> = ({
   const [open, setOpen] = useState(false);
   const selected = options.find(o => o.value === value);
 
+  if (Platform.OS === 'web') {
+    return (
+      <View style={[styles.container, containerStyle]}>
+        {label && <Text style={styles.label}>{label}</Text>}
+        <select
+          value={value || ''}
+          onChange={(e: any) => onChange(e.target.value)}
+          style={{
+            border: `1.5px solid ${Colors.gray[300]}`,
+            borderRadius: '6px',
+            padding: '10px 12px',
+            fontSize: '16px',
+            color: Colors.gray[900],
+            backgroundColor: Colors.white,
+            width: '100%',
+            outline: 'none',
+            boxSizing: 'border-box',
+            appearance: 'none',
+            backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'right 12px center',
+            backgroundSize: '16px',
+            paddingRight: '40px',
+          } as any}
+        >
+          {placeholder && <option value="" disabled>{placeholder}</option>}
+          {options.map(o => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, containerStyle]}>
       {label && <Text style={styles.label}>{label}</Text>}
@@ -47,38 +84,40 @@ export const Select: React.FC<SelectProps> = ({
         <Ionicons name="chevron-down" size={18} color={Colors.gray[400]} />
       </TouchableOpacity>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setOpen(false)}>
-          <View style={styles.modal}>
-            {label && <Text style={styles.modalTitle}>{label}</Text>}
-            <FlatList
-              data={options}
-              keyExtractor={item => item.value}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[styles.option, item.value === value && styles.optionSelected]}
-                  onPress={() => {
-                    onChange(item.value);
-                    setOpen(false);
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.optionText,
-                      item.value === value && styles.optionTextSelected,
-                    ]}
+      {open && (
+        <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+          <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={() => setOpen(false)}>
+            <View style={styles.modal}>
+              {label && <Text style={styles.modalTitle}>{label}</Text>}
+              <FlatList
+                data={options}
+                keyExtractor={item => item.value}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={[styles.option, item.value === value && styles.optionSelected]}
+                    onPress={() => {
+                      onChange(item.value);
+                      setOpen(false);
+                    }}
                   >
-                    {item.label}
-                  </Text>
-                  {item.value === value && (
-                    <Ionicons name="checkmark" size={18} color={Colors.teal} />
-                  )}
-                </TouchableOpacity>
-              )}
-            />
-          </View>
-        </TouchableOpacity>
-      </Modal>
+                    <Text
+                      style={[
+                        styles.optionText,
+                        item.value === value && styles.optionTextSelected,
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
+                    {item.value === value && (
+                      <Ionicons name="checkmark" size={18} color={Colors.teal} />
+                    )}
+                  </TouchableOpacity>
+                )}
+              />
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
     </View>
   );
 };

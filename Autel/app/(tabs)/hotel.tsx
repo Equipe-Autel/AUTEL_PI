@@ -5,8 +5,9 @@ import {
   Text,
   TextInput,
   StyleSheet,
+  TouchableOpacity,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 // Componentes UI do sistema
@@ -31,6 +32,7 @@ export default function Hotel() {
   const { usuarioLogado, usuarios, pets, planos, adicionarReserva, calcularValorHospedagem, obterVagasDisponiveis } = useApp();
   const { toast } = useToast();
   const router = useRouter();
+  const { autoOpen } = useLocalSearchParams<{ autoOpen?: string }>();
 
   // estados do formulário de reserva
   const [petId, setPetId] = useState('');
@@ -44,6 +46,7 @@ export default function Hotel() {
   const [valorTotal, setValorTotal] = useState(0);
   const [vagas, setVagas] = useState<number | null>(null);
   const [dias, setDias] = useState(0);
+  const [mostrarForm, setMostrarForm] = useState(false);
 
   const isAdmin = usuarioLogado?.isAdmin ?? false;
 
@@ -53,6 +56,13 @@ export default function Hotel() {
       setAcomodacao(planos[0].nome);
     }
   }, [planos]);
+
+  // Abre o formulário automaticamente se vier da tela de reservas sem reservas
+  useEffect(() => {
+    if (autoOpen === 'true') {
+      setMostrarForm(true);
+    }
+  }, [autoOpen]);
 
   // Admin vê todos os pets de clientes; usuário comum só os seus
   const meusPets = !usuarioLogado
@@ -133,7 +143,7 @@ export default function Hotel() {
     );
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!petId) { toast.error('Por favor, selecione qual pet ficará conosco.'); return; }
     if (!dataEntrada || !dataSaida) { toast.error('As datas de check-in e check-out são obrigatórias.'); return; }
     
@@ -141,24 +151,39 @@ export default function Hotel() {
       toast.error('Infelizmente não temos vagas para este período.'); return;
     }
 
-    const petSelecionado = meusPets.find(p => p.id === petId);
-    const donoPetId = isAdmin && petSelecionado ? petSelecionado.usuarioId : usuarioLogado.id;
+    try {
+      const petSelecionado = meusPets.find(p => p.id === petId);
+      const donoPetId = isAdmin && petSelecionado ? petSelecionado.usuarioId : usuarioLogado.id;
 
-    adicionarReserva({
-      petId,
-      usuarioId: donoPetId,
-      dataEntrada,
-      dataSaidaPrevista: dataSaida,
-      responsavelAlimentacao: alimentacao,
-      tipoAcomodacao: acomodacao,
-      observacoesComida: observacoes,
-      status: 'Ativa',
-      valorTotal,
-    });
+      await adicionarReserva({
+        petId,
+        usuarioId: donoPetId,
+        dataEntrada,
+        dataSaidaPrevista: dataSaida,
+        responsavelAlimentacao: alimentacao,
+        tipoAcomodacao: acomodacao,
+        observacoesComida: observacoes,
+        status: 'Ativa',
+        valorTotal,
+      });
 
-    const pet = meusPets.find(p => p.id === petId);
-    toast.success(`Reserva para ${pet?.nome} realizada com sucesso!`);
-    router.push('/minhas-reservas');
+      const pet = meusPets.find(p => p.id === petId);
+      toast.success(`Reserva para ${pet?.nome} realizada com sucesso!`);
+      
+      setPetId('');
+      setDataEntrada('');
+      setDataSaida('');
+      setAlimentacao('Hotel');
+      if (planos.length > 0) {
+        setAcomodacao(planos[0].nome);
+      }
+      setObservacoes('');
+      setMostrarForm(false);
+
+      router.push('/minhas-reservas');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao realizar reserva.');
+    }
   };
 
   // Lógica de cor para o banner de vagas
@@ -168,16 +193,125 @@ export default function Hotel() {
     : vagas <= 3 ? Colors.orange // Mais urgente 
     : Colors.green;
 
+  if (!mostrarForm) {
+    return (
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          
+          {/* Banner Hero */}
+          <Card style={styles.introHeroCard}>
+            <CardContent style={styles.introHeroContent}>
+              <View style={styles.badgePromo}>
+                <Text style={styles.badgePromoText}>Hospedagem 5 Estrelas</Text>
+              </View>
+              <Text style={styles.introHeroTitle}>O Segundo Lar do Seu Pet</Text>
+              <Text style={styles.introHeroSubtitle}>
+                Proporcione uma estadia com conforto, diversão sob medida e carinho monitorado 24 horas por dia.
+              </Text>
+            </CardContent>
+          </Card>
+
+          {/* Vagas rápidas status */}
+          <View style={styles.quickVagasBanner}>
+            <Ionicons name="sparkles" size={18} color={Colors.orange} />
+            <Text style={styles.quickVagasText}>
+              Quartos prontos e higienizados. Faça sua reserva instantânea!
+            </Text>
+          </View>
+
+          {/* Botão de Ação Principal (CTA) */}
+          <Button
+            size="lg"
+            fullWidth
+            onPress={() => setMostrarForm(true)}
+            style={styles.ctaButton}
+            textStyle={styles.ctaButtonText}
+          >
+            <Ionicons name="calendar-outline" size={18} color={Colors.white} /> Iniciar Reserva
+          </Button>
+
+          {/* Grid de Diferenciais / Diferenciais */}
+          <Text style={styles.gridTitle}>Diferenciais Exclusivos</Text>
+          <View style={styles.benefitsGrid}>
+            <Card style={styles.benefitCard}>
+              <CardContent style={styles.benefitCardContent}>
+                <View style={[styles.benefitIconWrap, { backgroundColor: '#E0F2FE' }]}>
+                  <Ionicons name="thermometer-outline" size={20} color="#0284C7" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.benefitCardTitle}>Climatização</Text>
+                  <Text style={styles.benefitCardDesc}>Suítes com ar-condicionado e controle térmico.</Text>
+                </View>
+              </CardContent>
+            </Card>
+
+            <Card style={styles.benefitCard}>
+              <CardContent style={styles.benefitCardContent}>
+                <View style={[styles.benefitIconWrap, { backgroundColor: '#DCFCE7' }]}>
+                  <Ionicons name="videocam-outline" size={20} color="#15803D" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.benefitCardTitle}>Monitoramento 24h</Text>
+                  <Text style={styles.benefitCardDesc}>Câmeras ativas para você ver seu pet quando quiser.</Text>
+                </View>
+              </CardContent>
+            </Card>
+
+            <Card style={styles.benefitCard}>
+              <CardContent style={styles.benefitCardContent}>
+                <View style={[styles.benefitIconWrap, { backgroundColor: '#FEF9C3' }]}>
+                  <Ionicons name="basketball-outline" size={20} color="#A16207" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.benefitCardTitle}>Recreação Diária</Text>
+                  <Text style={styles.benefitCardDesc}>Brincadeiras e passeios supervisionados por cuidadores.</Text>
+                </View>
+              </CardContent>
+            </Card>
+
+            <Card style={styles.benefitCard}>
+              <CardContent style={styles.benefitCardContent}>
+                <View style={[styles.benefitIconWrap, { backgroundColor: '#FEE2E2' }]}>
+                  <Ionicons name="heart-outline" size={20} color="#B91C1C" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.benefitCardTitle}>Suporte Veterinário</Text>
+                  <Text style={styles.benefitCardDesc}>Atendimento ágil e veterinários sempre de plantão.</Text>
+                </View>
+              </CardContent>
+            </Card>
+          </View>
+
+        </View>
+        <View style={{ height: Spacing[8] }} />
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.content}>
-        <Card style={styles.mainCard}>
-          <CardHeader>
-            <CardTitle>Nova Hospedagem</CardTitle>
-            <Text style={styles.subtitle}>Preencha os detalhes para a estadia</Text>
-          </CardHeader>
-          
-          <CardContent>
+        <View style={{
+          backgroundColor: Colors.white,
+          borderRadius: BorderRadius.lg,
+          padding: Spacing[4],
+        }}>
+          <View style={styles.formHeaderRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={{
+                fontSize: FontSizes.lg,
+                fontWeight: '700',
+                color: Colors.gray[900],
+                marginBottom: 4,
+              }}>Nova Hospedagem</Text>
+              <Text style={styles.subtitle}>Preencha os detalhes para a estadia</Text>
+            </View>
+            <TouchableOpacity onPress={() => setMostrarForm(false)} style={styles.backButton}>
+              <Ionicons name="arrow-back-circle-outline" size={28} color={Colors.teal} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ marginTop: Spacing[4] }}>
             <Select
               label="Quem vai se hospedar? *"
               options={petOptions}
@@ -273,12 +407,13 @@ export default function Hotel() {
               fullWidth
               disabled={vagas === 0 || !petId}
               onPress={handleSubmit}
-              style={{ marginTop: Spacing[2] }}
+              style={styles.finalizarBtn}
+              textStyle={styles.finalizarBtnText}
             >
               Finalizar Reserva
             </Button>
-          </CardContent>
-        </Card>
+          </View>
+        </View>
       </View>
     </ScrollView>
   );
@@ -354,4 +489,63 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: Colors.teal, opacity: 0.1, marginVertical: Spacing[3] },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   resumoNote: { fontSize: FontSizes.xs, color: Colors.gray[600], fontStyle: 'italic' },
+  
+  // Apresentação
+  introHeroCard: { backgroundColor: Colors.tealDark, borderBottomWidth: 4, borderBottomColor: Colors.orange, marginBottom: Spacing[2] },
+  introHeroContent: { padding: Spacing[5], alignItems: 'flex-start' },
+  badgePromo: { backgroundColor: Colors.orange, paddingHorizontal: 12, paddingVertical: 4, borderRadius: BorderRadius.full, marginBottom: Spacing[3] },
+  badgePromoText: { color: Colors.white, fontSize: FontSizes.xs, fontWeight: '700', textTransform: 'uppercase' },
+  introHeroTitle: { color: Colors.white, fontSize: FontSizes.xl, fontWeight: '800', marginBottom: Spacing[2] },
+  introHeroSubtitle: { color: 'rgba(255,255,255,0.85)', fontSize: FontSizes.sm, lineHeight: 20 },
+  
+  quickVagasBanner: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: Colors.orangeLight, borderWidth: 1.5, borderColor: Colors.orange, padding: Spacing[3], borderRadius: BorderRadius.lg, marginVertical: Spacing[3] },
+  quickVagasText: { color: Colors.orange, fontSize: FontSizes.xs, fontWeight: '700', flex: 1 },
+  
+  gridTitle: { fontSize: FontSizes.lg, fontWeight: '800', color: Colors.gray[900], marginBottom: Spacing[3], marginTop: Spacing[2] },
+  benefitsGrid: { gap: 12, marginBottom: Spacing[5] },
+  benefitCard: { marginBottom: 0, elevation: 1, shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 6 },
+  benefitCardContent: { flexDirection: 'row', gap: Spacing[3], alignItems: 'center', padding: Spacing[3] },
+  benefitIconWrap: { width: 44, height: 44, borderRadius: BorderRadius.md, alignItems: 'center', justifyContent: 'center' },
+  benefitCardTitle: { fontSize: FontSizes.base, fontWeight: '700', color: Colors.gray[900], marginBottom: 2 },
+  benefitCardDesc: { fontSize: FontSizes.xs, color: Colors.gray[500], lineHeight: 16 },
+  
+  ctaButton: { 
+    backgroundColor: Colors.orange, 
+    marginTop: Spacing[3], 
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: BorderRadius.lg,
+    elevation: 3,
+    shadowColor: Colors.orange,
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  ctaButtonText: {
+    color: Colors.white,
+    fontWeight: '800',
+    fontSize: FontSizes.base,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  finalizarBtn: {
+    backgroundColor: Colors.orange,
+    marginTop: Spacing[4],
+    paddingVertical: 14,
+    borderRadius: BorderRadius.lg,
+    elevation: 3,
+    shadowColor: Colors.orange,
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  finalizarBtnText: {
+    color: Colors.white,
+    fontWeight: '800',
+    fontSize: FontSizes.base,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  formHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  backButton: { padding: 4 },
 });

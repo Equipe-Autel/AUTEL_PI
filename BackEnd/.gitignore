@@ -1,0 +1,31 @@
+# Dependências
+node_modules/
+
+/src/generated/prisma/
+
+# Variáveis de ambiente
+.env
+.env.local
+
+# Logs
+*.log
+logs/
+
+# Build
+dist/
+build/
+
+# Cache
+.cache/
+
+# Arquivos temporários
+tmp/
+temp/
+
+# IDE
+.vscode/
+.idea/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
