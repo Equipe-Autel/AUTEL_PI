@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Platform, StyleSheet, ViewStyle } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { View, Text, TouchableOpacity, Platform, StyleSheet, ViewStyle, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, BorderRadius, FontSizes, Spacing } from '../../constants/theme';
+
+const DateTimePicker = Platform.OS !== 'web' ? require('@react-native-community/datetimepicker').default : null;
 
 interface DatePickerProps {
   label?: string;
@@ -38,6 +39,31 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   minimumDate,
   containerStyle,
 }) => {
+  if (Platform.OS === 'web') {
+    return (
+      <View style={[styles.container, containerStyle]}>
+        {label && <Text style={styles.label}>{label}</Text>}
+        <TextInput
+          value={value || ''}
+          placeholder="AAAA-MM-DD"
+          onChangeText={onChange}
+          style={{
+            borderWidth: 1.5,
+            borderColor: Colors.gray[300],
+            borderRadius: BorderRadius.md,
+            paddingHorizontal: Spacing[3],
+            paddingVertical: Spacing[3],
+            fontSize: FontSizes.base,
+            color: Colors.gray[900],
+            backgroundColor: Colors.white,
+            width: '100%',
+            minHeight: 44,
+          }}
+        />
+      </View>
+    );
+  }
+
   const [show, setShow] = useState(false);
   const date = value ? parseDate(value) : new Date();
   const minDate = minimumDate ? parseDate(minimumDate) : undefined;

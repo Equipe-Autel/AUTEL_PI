@@ -38,9 +38,13 @@ export default function MeusPets() {
       {
         text: 'Remover',
         style: 'destructive',
-        onPress: () => {
-          removerPet(pet.id);
-          toast.success(`${pet.nome} removido(a) com sucesso.`);
+        onPress: async () => {
+          try {
+            await removerPet(pet.id);
+            toast.success(`${pet.nome} removido(a) com sucesso.`);
+          } catch (err: any) {
+            toast.error(err.message || 'Erro ao remover pet.');
+          }
         },
       },
     ]);

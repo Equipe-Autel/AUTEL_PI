@@ -1,10 +1,11 @@
 import React from 'react';
-import { Tabs } from 'expo-router';
+import { Tabs } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../src/constants/theme';
 import { useApp } from '../../src/context/AppContext';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function HeaderLeft() {
   const router = useRouter();
@@ -33,12 +34,7 @@ function HeaderRight() {
 
   return (
     <View style={styles.headerRight}>
-      {usuarioLogado.isAdmin && (
-        <TouchableOpacity onPress={() => router.push('/admin')} style={styles.adminBtn}>
-          <Ionicons name="shield-checkmark" size={18} color={Colors.teal} />
-        </TouchableOpacity>
-      )}
-      <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
+      <TouchableOpacity onPress={() => { router.replace('/'); logout(); }} style={styles.logoutBtn}>
         <Ionicons name="log-out-outline" size={18} color={Colors.teal} />
       </TouchableOpacity>
     </View>
@@ -47,6 +43,7 @@ function HeaderRight() {
 
 export default function TabsLayout() {
   const { usuarioLogado } = useApp();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -56,8 +53,8 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: Colors.white,
           borderTopColor: Colors.gray[200],
-          height: 60,
-          paddingBottom: 8,
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
         headerStyle: { backgroundColor: Colors.white },
@@ -72,8 +69,19 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Início',
+          href: usuarioLogado?.isAdmin ? null : undefined,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="admin"
+        options={{
+          title: 'Admin',
+          href: usuarioLogado?.isAdmin ? undefined : null,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="shield-checkmark" size={size} color={color} />
           ),
         }}
       />
@@ -120,9 +128,19 @@ export default function TabsLayout() {
         name="meus-pets"
         options={{
           title: 'Meus Pets',
-          href: usuarioLogado ? undefined : null,
+          href: usuarioLogado && !usuarioLogado.isAdmin ? undefined : null,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="paw" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="cadastro"
+        options={{
+          title: 'Cadastro',
+          href: usuarioLogado?.isAdmin ? undefined : null,
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add-circle" size={size} color={color} />
           ),
         }}
       />

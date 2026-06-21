@@ -1,268 +1,90 @@
-<div align="center">
+# Autel - Sistema de Reserva para Hotel Pet 🐾
 
-<img src="https://img.shields.io/badge/status-em%20desenvolvimento-yellow?style=for-the-badge" />
-
-<br/>
-<br/>
-
-# 🐾 Autel
-### Hotel para Pets
-
-*Um espaço pensado com carinho para cuidar do seu melhor amigo.*
-
-</div>
+Este repositório contém a solução completa para o **Autel**, um sistema de reservas de hospedagem voltado para hotéis pet. A aplicação é dividida em duas partes principais:
+1. **BackEnd**: API desenvolvida em Node.js com Express, Prisma ORM e banco de dados PostgreSQL.
+2. **Autel (FrontEnd/App)**: Aplicativo mobile multiplataforma desenvolvido com React Native (Expo) e TypeScript.
 
 ---
 
-## ✨ Sobre o Projeto
-
-O **Autel Pet Hotel** é um app mobile completo para gerenciamento de hospedagem de animais de estimação. Permite que tutores cadastrem seus pets, façam reservas, acompanhem estadias e gerenciem tudo pelo celular.
-
-### Funcionalidades
-
-- 🔐 **Autenticação** por e-mail (sem senha)
-- 🐶 **Cadastro de pets** com informações detalhadas de saúde e comportamento
-- 📅 **Reservas** com cálculo automático de valor e vagas disponíveis
-- 🏨 **3 planos de acomodação** — Standard (R$ 80/dia), Premium (R$ 150/dia) e Luxo (R$ 250/dia)
-- ✏️ **Gestão de reservas** — editar datas, tipo de acomodação e cancelar (com multa de 30% se < 7 dias)
-- 🛡️ **Painel administrativo** com visão geral de usuários, pets e receita
-- 💾 **Persistência local** via AsyncStorage
+## 🛠️ Pré-requisitos
+Antes de começar, verifique se você possui as seguintes ferramentas instaladas em seu ambiente de desenvolvimento:
+* **Node.js** (versão 18 ou superior recomendada)
+* **npm** ou **yarn**
+* **PostgreSQL** (banco de dados rodando localmente ou em nuvem)
+* **Expo Go** instalado no seu dispositivo móvel (Android/iOS) para testar o app físico, ou um emulador configurado.
 
 ---
 
-## 🛠 Stack
+## 🗄️ 1. Configuração e Inicialização do BackEnd
 
-| Tecnologia | Versão |
-|---|---|
-| Expo SDK | 54 |
-| Expo Router | 6 |
-| React | 19.1 |
-| React Native | 0.81.5 |
-| TypeScript | 5.x |
-| AsyncStorage | 2.2.0 |
+O backend gerencia os usuários, pets, reservas, acomodações (planos) e vagas do hotel pet.
 
----
+### Passos para rodar:
+1. Abra um terminal e navegue até a pasta do backend:
+   ```bash
+   cd BackEnd
+   ```
 
-## 🚀 Como Rodar
+2. Instale todas as dependências do projeto:
+   ```bash
+   npm install
+   ```
 
-### Pré-requisitos
+3. Configure as variáveis de ambiente:
+   * No diretório `BackEnd`, crie ou edite o arquivo `.env` com a seguinte estrutura:
+     ```env
+     PORT=3000
+     DATABASE_URL="postgresql://USUARIO:SENHA@localhost:5432/autel?schema=public"
+     JWT_SECRET="sua_chave_secreta_jwt_aqui"
+     ```
+   * Substitua `USUARIO`, `SENHA` e o nome do banco de dados (`autel`) pelas suas credenciais locais do PostgreSQL.
 
-- [Node.js](https://nodejs.org) 18 ou superior
-- [npm](https://www.npmjs.com) 9 ou superior
-- App **Expo Go** instalado no celular ([Android](https://play.google.com/store/apps/details?id=host.exp.exponent) / [iOS](https://apps.apple.com/app/expo-go/id982107779))
+4. Gere o client do Prisma ORM:
+   ```bash
+   npx prisma generate
+   ```
 
----
+5. Execute as migrations para criar as tabelas no banco de dados (caso esteja configurando um banco do zero):
+   ```bash
+   npx prisma migrate dev
+   ```
 
-### 1. Clone o repositório
-
-```bash
-git clone https://github.com/seu-usuario/autel-pet-hotel.git
-cd Autel
-```
-
-### 2. Instale as dependências
-
-```bash
-npm install --legacy-peer-deps
-```
-
-### 3. Inicie o servidor de desenvolvimento
-
-```bash
-npx expo start
-```
+6. Inicie o servidor de desenvolvimento:
+   ```bash
+   npm run dev
+   ```
+   * O servidor iniciará por padrão na porta **3000** (`http://localhost:3000`).
 
 ---
 
-## 📱 Rodando no Dispositivo
+## 📱 2. Configuração e Inicialização do App (FrontEnd)
 
-Após rodar `npx expo start`, um QR code aparecerá no terminal.
+O aplicativo mobile permite que os tutores cadastrem seus pets, criem e gerenciem reservas de diárias, e possibilita que administradores controlem todo o hotel através de um painel gerencial.
 
-### Celular físico (recomendado)
-1. Abra o app **Expo Go** no seu celular
-2. Escaneie o QR code exibido no terminal
-3. O app carrega automaticamente 🎉
+### Passos para rodar:
+1. Abra um novo terminal e navegue até a pasta do aplicativo:
+   ```bash
+   cd Autel
+   ```
 
-### Emulador Android
-Pressione `A` no terminal com o emulador aberto.
-> Recomendado: AVD com **API 34 ou 35** (Android 14/15). API 36 pode ser instável.
+2. Instale as dependências do aplicativo:
+   ```bash
+   npm install
+   ```
 
-### Simulador iOS *(apenas macOS)*
-Pressione `I` no terminal com o Xcode instalado.
+3. Configure o endereço da API no app:
+   * O aplicativo utiliza um arquivo de configuração para saber onde o backend está rodando. Verifique o arquivo `src/services/api.ts` e certifique-se de que a `API_URL` aponta para o IP correto da sua máquina na rede local (essencial para testar em dispositivo móvel físico) ou use `http://10.0.2.2:3000` caso utilize o emulador do Android.
 
----
+4. Inicie o servidor de desenvolvimento do Expo:
+   ```bash
+   npx expo start
+   ```
 
-## 👤 Usuários de Teste
-
-O app vem com dois usuários pré-carregados:
-
-| Tipo | E-mail |
-|---|---|
-| 🛡️ Administrador | `admin@autel.com` |
-| 👤 Usuário comum | `joao@email.com` |
-
-> Basta digitar o e-mail na tela de login — sem senha.
-
----
-
-## 📁 Estrutura do Projeto
-
-```
-Autel/
-├── .expo/
-│   ├── devices.json
-│   ├── README.md
-│   └── types/
-│       └── router.d.ts
-├── app/
-│   ├── +not-found.tsx
-│   ├── _layout.tsx
-│   ├── admin.tsx
-│   ├── cadastro-pet.tsx
-│   ├── cadastro-usuario.tsx
-│   ├── contatos.tsx
-│   ├── login.tsx
-│   ├── quem-somos.tsx
-│   └── (tabs)/
-│       ├── _layout.tsx
-│       ├── hotel.tsx
-│       ├── index.tsx
-│       └── minhas-reservas.tsx
-├── src/
-│   ├── app/
-│   │   ├── App.tsx
-│   │   ├── routes.tsx
-│   │   ├── components/
-│   │   │   ├── Layout.tsx
-│   │   │   ├── figma/
-│   │   │   │   └── ImageWithFallback.tsx
-│   │   │   └── ui/
-│   │   │       ├── accordion.tsx
-│   │   │       ├── alert-dialog.tsx
-│   │   │       ├── alert.tsx
-│   │   │       ├── aspect-ratio.tsx
-│   │   │       ├── avatar.tsx
-│   │   │       ├── badge.tsx
-│   │   │       ├── breadcrumb.tsx
-│   │   │       ├── button.tsx
-│   │   │       ├── calendar.tsx
-│   │   │       ├── card.tsx
-│   │   │       ├── carousel.tsx
-│   │   │       ├── chart.tsx
-│   │   │       ├── checkbox.tsx
-│   │   │       ├── collapsible.tsx
-│   │   │       ├── command.tsx
-│   │   │       ├── context-menu.tsx
-│   │   │       ├── dialog.tsx
-│   │   │       ├── drawer.tsx
-│   │   │       ├── dropdown-menu.tsx
-│   │   │       ├── form.tsx
-│   │   │       ├── hover-card.tsx
-│   │   │       ├── input-otp.tsx
-│   │   │       ├── input.tsx
-│   │   │       ├── label.tsx
-│   │   │       ├── menubar.tsx
-│   │   │       ├── navigation-menu.tsx
-│   │   │       ├── pagination.tsx
-│   │   │       ├── popover.tsx
-│   │   │       ├── progress.tsx
-│   │   │       ├── radio-group.tsx
-│   │   │       ├── resizable.tsx
-│   │   │       ├── scroll-area.tsx
-│   │   │       ├── select.tsx
-│   │   │       ├── separator.tsx
-│   │   │       ├── sheet.tsx
-│   │   │       ├── sidebar.tsx
-│   │   │       ├── skeleton.tsx
-│   │   │       ├── slider.tsx
-│   │   │       ├── sonner.tsx
-│   │   │       ├── switch.tsx
-│   │   │       ├── table.tsx
-│   │   │       ├── tabs.tsx
-│   │   │       ├── textarea.tsx
-│   │   │       ├── toggle-group.tsx
-│   │   │       ├── toggle.tsx
-│   │   │       ├── tooltip.tsx
-│   │   │       ├── use-mobile.ts
-│   │   │       └── utils.ts
-│   │   ├── context/
-│   │   │   └── AppContext.tsx
-│   │   ├── pages/
-│   │   │   ├── Admin.tsx
-│   │   │   ├── CadastroPet.tsx
-│   │   │   ├── CadastroUsuario.tsx
-│   │   │   ├── Contatos.tsx
-│   │   │   ├── Home.tsx
-│   │   │   ├── Hotel.tsx
-│   │   │   ├── Login.tsx
-│   │   │   ├── MinhasReservas.tsx
-│   │   │   ├── NotFound.tsx
-│   │   │   └── QuemSomos.tsx
-│   │   ├── types/
-│   │   │   └── index.ts
-│   │   └── utils/
-│   │       └── storage.ts
-│   ├── components/
-│   │   └── ui/
-│   │       ├── Badge.tsx
-│   │       ├── Button.tsx
-│   │       ├── Card.tsx
-│   │       ├── DatePicker.tsx
-│   │       ├── Input.tsx
-│   │       ├── Select.tsx
-│   │       └── Toast.tsx
-│   ├── constants/
-│   │   └── theme.ts
-│   ├── context/
-│   │   └── AppContext.tsx
-│   ├── main.tsx
-│   ├── styles/
-│   │   ├── fonts.css
-│   │   ├── index.css
-│   │   ├── tailwind.css
-│   │   └── theme.css
-│   ├── types/
-│   │   └── index.ts
-│   └── utils/
-│       └── storage.ts
-├── app.json
-├── ATTRIBUTIONS.md
-├── babel.config.js
-├── expo-env.d.ts
-├── index.html
-├── package-lock.json
-├── package.json
-├── postcss.config.mjs
-├── tsconfig.json
-└── vite.config.ts
-```
-
----
-
-## 🎨 Design
-
-| Token | Valor |
-|---|---|
-| Cor principal (teal) | `#2D7A7B` |
-| Cor secundária (laranja) | `#E67E4D` |
-| Fundo (bege) | `#F5F5F0` |
-
+5. Abrindo o aplicativo:
+   * **No celular físico:** Abra a câmera do seu celular ou o aplicativo **Expo Go** e escaneie o QR Code gerado no terminal. Ambos os dispositivos (computador e celular) devem estar conectados na **mesma rede Wi-Fi**.
+   * **No emulador Android:** Pressione `a` no terminal.
+   * **No simulador iOS:** Pressione `i` no terminal.
 
 ---
 
 
-## 👥 Equipe
-
-| Nome | Matrícula |
-|------|--------|
-| Ian Melo | ... |
-| Caroline Lopes | ... |
-| Amanda Dahm | 2422130022 |
-| Antônio Vieira | ... |
-
-
----
-
-<div align="center">
-  Feito com 🐾 pela equipe Autel
-</div>
